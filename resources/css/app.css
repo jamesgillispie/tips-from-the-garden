@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@source "../views";
+@source "../../app/Livewire";
+
+@theme {
+    --font-serif: "Iowan Old Style", "Palatino", Georgia, serif;
+    --color-garden-50: #f4f7f0;
+    --color-garden-100: #e4ecdb;
+    --color-garden-600: #4a6b3a;
+    --color-garden-700: #3a5530;
+    --color-garden-800: #2d4226;
+    --color-soil-700: #4e3d30;
+}
