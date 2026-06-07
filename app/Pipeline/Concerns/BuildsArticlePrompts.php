@@ -36,7 +36,10 @@ PROMPT;
         }
 
         if ($request->voiceProfile) {
-            $parts[] = "Voice and style notes for this writer (follow closely):\n\n"
+            $parts[] = 'Voice and style guide for this writer (follow closely). The '
+                .'exemplar passages show how they sound — match their rhythm, diction, '
+                .'and phrasing, but do NOT reuse their facts or content. Write only from '
+                ."today's transcript.\n\n"
                 .$request->voiceProfile;
         }
 
@@ -63,16 +66,25 @@ PROMPT;
     protected function styleSystemPrompt(): string
     {
         return <<<'PROMPT'
-You analyze writing samples and produce a compact voice profile: concrete,
-actionable style notes a ghostwriter can follow to write new prose that
-sounds like this author.
+You analyze a writer's past work and produce a voice profile a ghostwriter
+can follow to write new prose that sounds like this author. Work only from
+the samples provided — never invent traits you cannot see in them.
 
-Cover: tone and register, sentence rhythm and length, vocabulary and pet
-phrases, how they open and close pieces, how they handle instructions and
-asides, punctuation habits, and anything distinctive. Quote short
-characteristic phrases as examples.
+Produce exactly two sections, in this order, using these exact headings:
 
-Output 150-300 words of plain prose notes. No preamble, no headings.
+## Style notes
+150-250 words of concrete, actionable prose notes. Cover: tone and register,
+sentence rhythm and length, vocabulary and pet phrases, how they open and
+close pieces, how they handle instructions and asides, and punctuation
+habits. Quote short characteristic phrases inline as evidence.
+
+## Exemplar passages
+2-3 short passages (1-3 sentences each) copied VERBATIM from the samples that
+best capture the author's voice. Reproduce them exactly — do not paraphrase,
+polish, or stitch fragments together. Put a line containing only "—" between
+passages.
+
+No preamble, no other headings, no commentary.
 PROMPT;
     }
 
