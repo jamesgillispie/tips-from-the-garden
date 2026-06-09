@@ -30,7 +30,8 @@ class TranscribeAudio implements ShouldQueue
 
         $result = $transcriber->transcribe($audioPath);
 
-        $this->submission->transcript()->create([
+        // updateOrCreate keeps a retried attempt from leaving two transcripts.
+        $this->submission->transcript()->updateOrCreate([], [
             'raw_text' => $result->text,
             'transcriber' => $transcriber->identifier(),
             'duration_seconds' => $result->durationSeconds,

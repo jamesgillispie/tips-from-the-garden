@@ -13,12 +13,12 @@
             <a href="{{ route('home') }}" class="font-serif text-xl font-semibold text-garden-800">
                 🌱 {{ config('app.name') }}
             </a>
-            <nav class="flex items-center gap-4 text-sm">
+            <nav class="flex items-center gap-5 text-base">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="text-garden-700 hover:underline">My garden desk</a>
+                    <a href="{{ route('dashboard') }}" class="font-medium text-garden-700 hover:underline">My garden desk</a>
                     <form method="POST" action="{{ route('auth.logout') }}">
                         @csrf
-                        <button type="submit" class="text-soil-700/60 hover:underline">Sign out</button>
+                        <button type="submit" class="text-soil-700/70 hover:underline">Sign out</button>
                     </form>
                 @endauth
             </nav>
@@ -29,7 +29,7 @@
         {{ $slot }}
     </main>
 
-    <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-xs text-soil-700/50">
+    <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-sm text-soil-700/70">
         Record a memo in your garden. Get back an article in your own voice.
     </footer>
 

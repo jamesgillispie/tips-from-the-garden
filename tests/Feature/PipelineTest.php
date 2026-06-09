@@ -39,6 +39,30 @@ class PipelineTest extends TestCase
         $this->assertNotEmpty($submission->article->download_token);
     }
 
+    public function test_retried_jobs_do_not_duplicate_transcripts_or_articles(): void
+    {
+        $this->seed(ArticleTemplateSeeder::class);
+
+        $user = User::fromEmail('gardener@example.test');
+
+        $submission = Submission::create([
+            'user_id' => $user->id,
+            'source' => Submission::SOURCE_UPLOAD,
+            'audio_path' => 'audio/fake.m4a',
+            'original_filename' => 'fake.m4a',
+        ]);
+
+        // Each job allows retries — a second attempt must not double up.
+        TranscribeAudio::dispatchSync($submission);
+        TranscribeAudio::dispatchSync($submission);
+        WriteArticle::dispatchSync($submission);
+        WriteArticle::dispatchSync($submission);
+
+        $this->assertDatabaseCount('transcripts', 1);
+        $this->assertDatabaseCount('articles', 1);
+        $this->assertEquals(Submission::STATUS_READY, $submission->fresh()->status);
+    }
+
     public function test_article_is_viewable_and_downloadable_by_token(): void
     {
         $user = User::fromEmail('gardener@example.test');

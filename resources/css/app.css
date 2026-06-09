@@ -12,3 +12,25 @@
     --color-garden-800: #2d4226;
     --color-soil-700: #4e3d30;
 }
+
+@layer base {
+    /* A roomier base size — everything is rem-based, so the whole UI scales. */
+    html {
+        font-size: 112.5%; /* 18px */
+    }
+
+    /* Alpine: hide pre-init recorder states until Alpine takes over. */
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* A focus ring you can actually see. */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+        outline: 3px solid var(--color-garden-600);
+        outline-offset: 2px;
+    }
+}

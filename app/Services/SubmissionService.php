@@ -17,9 +17,9 @@ use Illuminate\Support\Str;
 class SubmissionService
 {
     /**
-     * Intake from the web upload form.
+     * Intake from the web form — an uploaded file or an in-browser recording.
      */
-    public function fromUpload(UploadedFile $file, string $email): Submission
+    public function fromUpload(UploadedFile $file, string $email, string $source = Submission::SOURCE_UPLOAD): Submission
     {
         $user = User::fromEmail($email);
 
@@ -30,7 +30,7 @@ class SubmissionService
 
         $submission = Submission::create([
             'user_id' => $user->id,
-            'source' => Submission::SOURCE_UPLOAD,
+            'source' => $source,
             'audio_path' => $path,
             'original_filename' => $file->getClientOriginalName(),
         ]);

@@ -1,12 +1,17 @@
 <x-mail::message>
-# Your article is ready
+# {{ $article->title }}
 
-**{{ $article->title }}**
+Your article is ready — here it is, start to finish. It's also saved online,
+where you can download it as a PDF to print or share.
 
-Read it, download it as a PDF or Markdown file, or keep it for your records.
+---
+
+{{ $article->body_md }}
+
+---
 
 <x-mail::button :url="$articleUrl">
-Read your article
+Read it online or download a PDF
 </x-mail::button>
 
 Want future articles to sound even more like you? Sign in from the article

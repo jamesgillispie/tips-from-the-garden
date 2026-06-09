@@ -4,7 +4,7 @@
             <h1 class="font-serif text-3xl font-semibold text-garden-800 sm:text-4xl">
                 {{ $article->title }}
             </h1>
-            <p class="mt-3 text-sm text-soil-700/60">
+            <p class="mt-3 text-base text-soil-700/70">
                 {{ $article->user->name ?: $article->user->email }}
                 · {{ $article->created_at->format('F j, Y') }}
             </p>
@@ -18,17 +18,17 @@
 
         <footer class="mt-10 flex flex-wrap items-center gap-3 border-t border-garden-100 pt-6">
             <a href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}"
-                class="rounded-lg bg-garden-700 px-4 py-2 text-sm font-semibold text-white hover:bg-garden-800">
+                class="rounded-xl bg-garden-700 px-5 py-3 text-base font-semibold text-white shadow transition hover:bg-garden-800">
                 Download PDF
             </a>
             <a href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}"
-                class="rounded-lg border border-garden-100 px-4 py-2 text-sm font-semibold text-garden-700 hover:bg-garden-50">
-                Download Markdown
+                class="rounded-xl border-2 border-garden-100 px-5 py-3 text-base font-semibold text-garden-700 transition hover:bg-garden-50">
+                Download as text
             </a>
             @guest
-                <span class="ml-auto text-xs text-soil-700/50">
+                <span class="ml-auto text-sm text-soil-700/70">
                     Want it to sound even more like you?
-                    <a href="{{ route('dashboard') }}" class="text-garden-700 underline">Sign in and add writing samples</a>
+                    <a href="{{ route('dashboard') }}" class="font-medium text-garden-700 underline">Sign in and add writing samples</a>
                 </span>
             @endguest
         </footer>

@@ -16,6 +16,9 @@ class DeliverArticle implements ShouldQueue
 
     public int $tries = 3;
 
+    /** @var array<int, int> */
+    public array $backoff = [60, 300];
+
     public function __construct(
         public Submission $submission,
     ) {}
@@ -28,9 +31,13 @@ class DeliverArticle implements ShouldQueue
             throw new RuntimeException('No article found for submission.');
         }
 
-        Mail::to($this->submission->user->email)->send(new ArticleReady($article));
+        // delivered_at doubles as the idempotency flag: a retried attempt
+        // that already emailed the article must not email it twice.
+        if ($article->delivered_at === null) {
+            Mail::to($this->submission->user->email)->send(new ArticleReady($article));
 
-        $article->update(['delivered_at' => now()]);
+            $article->update(['delivered_at' => now()]);
+        }
 
         UpdateVoiceProfile::dispatch($this->submission);
     }

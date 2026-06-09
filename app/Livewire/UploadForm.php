@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Submission;
 use App\Services\SubmissionService;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
@@ -12,8 +13,12 @@ class UploadForm extends Component
 {
     use WithFileUploads;
 
-    /** Which intake the form is showing: 'audio' (upload a file) or 'paste' (type a transcript). */
-    public string $mode = 'audio';
+    /**
+     * Which intake the form is showing:
+     * 'record' (record right on the page), 'audio' (upload a file),
+     * or 'paste' (type a transcript).
+     */
+    public string $mode = 'record';
 
     public ?TemporaryUploadedFile $audio = null;
 
@@ -30,7 +35,7 @@ class UploadForm extends Component
 
     public function setMode(string $mode): void
     {
-        $this->mode = $mode === 'paste' ? 'paste' : 'audio';
+        $this->mode = in_array($mode, ['record', 'audio', 'paste'], true) ? $mode : 'record';
         $this->resetErrorBag();
     }
 
@@ -52,6 +57,21 @@ class UploadForm extends Component
         return $rules;
     }
 
+    protected function messages(): array
+    {
+        return [
+            'audio.required' => $this->mode === 'record'
+                ? 'Record your memo first — press the big green button above.'
+                : 'Choose a voice memo file first.',
+            'audio.mimes' => "That doesn't look like a recording we can read — an m4a, mp3, or wav file works best.",
+            'audio.max' => 'That recording is too large — anything under about an hour is fine.',
+            'transcript.required' => 'Type or paste your garden notes first.',
+            'transcript.min' => "Give us a few sentences at least — a short note doesn't tell us much.",
+            'email.required' => 'Enter your email so we know where to send your article.',
+            'email.email' => "That email address doesn't look quite right — double-check it?",
+        ];
+    }
+
     public function submit(SubmissionService $service)
     {
         $this->validate();
@@ -68,9 +88,11 @@ class UploadForm extends Component
 
         RateLimiter::hit($key, 600);
 
-        $submission = $this->mode === 'paste'
-            ? $service->fromTranscript($this->transcript, $this->email)
-            : $service->fromUpload($this->audio, $this->email);
+        $submission = match ($this->mode) {
+            'paste' => $service->fromTranscript($this->transcript, $this->email),
+            'record' => $service->fromUpload($this->audio, $this->email, Submission::SOURCE_RECORD),
+            default => $service->fromUpload($this->audio, $this->email),
+        };
 
         return $this->redirectRoute('submissions.status', ['submission' => $submission->uuid]);
     }

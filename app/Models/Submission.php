@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use A17\Twill\Models\Model;
+use App\Mail\SubmissionFailed;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class Submission extends Model
@@ -26,6 +29,8 @@ class Submission extends Model
     public const SOURCE_UPLOAD = 'upload';
 
     public const SOURCE_PASTE = 'paste';
+
+    public const SOURCE_RECORD = 'record';
 
     protected $fillable = [
         'uuid',
@@ -67,12 +72,33 @@ class Submission extends Model
         $this->update(['status' => $status]);
     }
 
+    /**
+     * Mark the submission failed and let the gardener know by email.
+     * Both the chain's catch and each job's failed() hook can land here,
+     * so the first transition wins and later calls are no-ops — the
+     * gardener only ever hears about a failure once.
+     */
     public function markFailed(string $error): void
     {
+        if ($this->isFailed()) {
+            return;
+        }
+
         $this->update([
             'status' => self::STATUS_FAILED,
             'error' => Str::limit($error, 2000),
         ]);
+
+        try {
+            if ($this->user) {
+                Mail::to($this->user->email)->queue(new SubmissionFailed($this));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Could not send the submission-failed email', [
+                'submission_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function isReady(): bool

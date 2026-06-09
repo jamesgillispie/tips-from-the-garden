@@ -86,12 +86,18 @@ marks the whole submission failed. `UpdateVoiceProfile` runs *after* delivery
 and must never fail the submission (the article already shipped) — it logs and
 moves on.
 
-### Three intake doors, one funnel
+### Four intake doors, one funnel
 Every door creates a `Submission` through `SubmissionService`, then dispatches a
 chain:
 
-- **Web upload** — `App\Livewire\UploadForm` (homepage `/`, `mode = 'audio'`) →
-  `fromUpload()`.
+- **In-browser recording** — `App\Livewire\UploadForm` (homepage `/`, default
+  `mode = 'record'`) → `fromUpload(..., source: 'record')`. The Alpine
+  `voiceRecorder` component (`resources/js/app.js`) records with MediaRecorder
+  and pushes the clip into the Livewire `audio` property via `$wire.upload()`,
+  so it flows through the same path as an uploaded file. Browsers record
+  webm/mp4/ogg — all in `pipeline.audio.mimes`. `config/livewire.php` raises
+  Livewire's 12 MB temp-upload default to match `AUDIO_MAX_SIZE_KB`.
+- **Web upload** — same `UploadForm` (`mode = 'audio'`) → `fromUpload()`.
 - **Pasted transcript** — same `UploadForm` (`mode = 'paste'`) →
   `fromTranscript()`. No audio, so `audio_path` is null (migration
   `..._make_audio_path_nullable_on_submissions`), the submission starts at
@@ -102,7 +108,18 @@ chain:
   (`webhooks/*` in `bootstrap/app.php`) and always returns 200 for
   parseable-but-unusable mail (no sender / no audio) so Postmark stops retrying;
   it returns 403 **only** on a bad `?token=` (checked against
-  `services.postmark.inbound_token`).
+  `services.postmark.inbound_token`). Mail without an audio attachment gets a
+  `NoAudioFound` reply with attach instructions, unless the sender looks
+  automated (no-reply/mailer-daemon/etc — loop protection).
+
+### The pipeline never goes silent
+`Submission::markFailed()` queues a `SubmissionFailed` email to the gardener on
+the **first** transition to failed only — the chain `.catch` and each job's
+`failed()` hook can both call it, so the guard lives in the model. Jobs are
+retry-idempotent: `TranscribeAudio` upserts its transcript, `WriteArticle`
+skips writing when an article already exists, and `DeliverArticle` uses
+`delivered_at` as the don't-email-twice flag. The `ArticleReady` email contains
+the full article body, not just a link.
 
 ### Identity & auth
 Email is the only identity. `User::fromEmail()` find-or-creates the user and

@@ -25,6 +25,14 @@ class WriteArticle implements ShouldQueue
 
     public function handle(WriterContract $writer): void
     {
+        // A retried attempt that already produced an article shouldn't write
+        // (and bill for) a second one.
+        if ($this->submission->article()->exists()) {
+            $this->submission->markAs(Submission::STATUS_READY);
+
+            return;
+        }
+
         $this->submission->markAs(Submission::STATUS_WRITING);
 
         $transcript = $this->submission->transcript;

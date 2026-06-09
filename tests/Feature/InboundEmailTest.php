@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\DeliverArticle;
 use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
+use App\Mail\NoAudioFound;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
@@ -46,8 +47,10 @@ class InboundEmailTest extends TestCase
         ]);
     }
 
-    public function test_inbound_email_without_audio_is_ignored(): void
+    public function test_inbound_email_without_audio_gets_a_helpful_reply(): void
     {
+        Mail::fake();
+
         $payload = [
             'FromFull' => ['Email' => 'gardener@example.test'],
             'Attachments' => [],
@@ -58,6 +61,24 @@ class InboundEmailTest extends TestCase
             ->assertJsonPath('status', 'no-audio');
 
         $this->assertDatabaseCount('submissions', 0);
+
+        Mail::assertQueued(NoAudioFound::class, fn ($mail) => $mail->hasTo('gardener@example.test'));
+    }
+
+    public function test_automated_senders_without_audio_get_no_reply(): void
+    {
+        Mail::fake();
+
+        $payload = [
+            'FromFull' => ['Email' => 'no-reply@example.test'],
+            'Attachments' => [],
+        ];
+
+        $this->postJson(route('webhooks.postmark'), $payload)
+            ->assertOk()
+            ->assertJsonPath('status', 'no-audio');
+
+        Mail::assertNotQueued(NoAudioFound::class);
     }
 
     public function test_bad_token_is_rejected_when_configured(): void

@@ -49,7 +49,8 @@ return [
         'disk' => env('AUDIO_DISK', 'local'),
         'path' => 'audio',
         'max_size_kb' => env('AUDIO_MAX_SIZE_KB', 102400), // 100 MB
-        'mimes' => ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'oga', 'flac', 'mp4', 'caf'],
+        // webm/weba are what browsers produce when recording on the page itself.
+        'mimes' => ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'oga', 'flac', 'mp4', 'caf', 'webm', 'weba'],
     ],
 
     /*

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Mail\NoAudioFound;
 use App\Services\SubmissionService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PostmarkInboundController extends Controller
 {
@@ -43,7 +45,13 @@ class PostmarkInboundController extends Controller
             });
 
         if (! $attachment) {
-            Log::info('Inbound email had no audio attachment — ignored.', ['from' => $email]);
+            Log::info('Inbound email had no audio attachment.', ['from' => $email]);
+
+            // Tell the sender what happened instead of going quiet — but never
+            // reply to addresses that look like machines, or we risk mail loops.
+            if (! $this->looksAutomated($email)) {
+                Mail::to($email)->queue(new NoAudioFound);
+            }
 
             return response()->json(['status' => 'no-audio']);
         }
@@ -56,5 +64,13 @@ class PostmarkInboundController extends Controller
         );
 
         return response()->json(['status' => 'queued', 'submission' => $submission->uuid]);
+    }
+
+    protected function looksAutomated(string $email): bool
+    {
+        return (bool) preg_match(
+            '/^(no-?reply|do-?not-?reply|mailer-daemon|postmaster|bounce|auto)/i',
+            $email,
+        );
     }
 }
