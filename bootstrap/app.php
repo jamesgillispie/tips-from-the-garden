@@ -11,6 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a tunnel/proxy (Cloudflare), trust forwarded headers so
+        // https URLs — including signed magic-link URLs — generate and
+        // validate correctly.
+        $middleware->trustProxies(at: '*');
+
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
         ]);

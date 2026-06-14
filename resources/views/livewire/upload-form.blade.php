@@ -173,8 +173,10 @@
                 you're back inside.
             </p>
         </div>
+        {{-- email_off tells Cloudflare's Scrape Shield NOT to obfuscate this into
+             a "[email protected]" link — the gardener needs to read and copy it. --}}
         <p class="mt-4 shrink-0 rounded-xl bg-garden-50 px-5 py-3 text-center text-lg font-semibold text-garden-700 select-all sm:mt-0">
-            memos@{{ parse_url(config('app.url'), PHP_URL_HOST) ?? 'tipsfromthegarden.test' }}
+            <!--email_off-->{{ config('pipeline.inbound.address') ?: 'memos@'.(parse_url(config('app.url'), PHP_URL_HOST) ?? 'tipsfromthegarden.test') }}<!--/email_off-->
         </p>
     </div>
 

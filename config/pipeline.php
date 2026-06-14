@@ -67,4 +67,20 @@ return [
         'max_samples_in_prompt' => env('VOICE_PROFILE_MAX_SAMPLES', 8),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Inbound email door
+    |--------------------------------------------------------------------------
+    |
+    | The address gardeners email voice memos to, shown on the homepage. Kept
+    | separate from APP_URL because the web host (e.g. a tunnel subdomain) is
+    | usually a CNAME that can't also carry mail. Falls back to the APP_URL
+    | host when unset.
+    |
+    */
+
+    'inbound' => [
+        'address' => env('INBOUND_EMAIL_ADDRESS'),
+    ],
+
 ];
