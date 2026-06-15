@@ -7,6 +7,7 @@ use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
 use App\Livewire\UploadForm;
 use App\Models\Submission;
+use App\Models\User;
 use App\Services\SubmissionService;
 use Database\Seeders\ArticleTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,13 +60,15 @@ class PasteTranscriptTest extends TestCase
         $this->seed(ArticleTemplateSeeder::class);
         Mail::fake();
 
-        Livewire::test(UploadForm::class)
+        $user = User::fromEmail('gardener@example.test');
+
+        Livewire::actingAs($user)
+            ->test(UploadForm::class)
             ->set('mode', 'paste')
             ->set('transcript', self::SAMPLE)
-            ->set('email', 'gardener@example.test')
             ->call('submit')
             ->assertHasNoErrors()
-            ->assertRedirect();
+            ->assertRedirect(route('dashboard', ['tab' => 'recordings']));
 
         $this->assertDatabaseHas('submissions', [
             'source' => Submission::SOURCE_PASTE,
@@ -75,10 +78,12 @@ class PasteTranscriptTest extends TestCase
 
     public function test_pasted_transcript_must_not_be_trivially_short(): void
     {
-        Livewire::test(UploadForm::class)
+        $user = User::fromEmail('gardener@example.test');
+
+        Livewire::actingAs($user)
+            ->test(UploadForm::class)
             ->set('mode', 'paste')
             ->set('transcript', 'too short')
-            ->set('email', 'gardener@example.test')
             ->call('submit')
             ->assertHasErrors(['transcript']);
 

@@ -14,24 +14,16 @@ class UploadForm extends Component
     use WithFileUploads;
 
     /**
-     * Which intake the form is showing:
-     * 'record' (record right on the page), 'audio' (upload a file),
-     * or 'paste' (type a transcript).
+     * Which intake is showing:
+     * 'record' (record on the page), 'audio' (upload a file),
+     * or 'paste' (type a transcript). This component is reached only when
+     * signed in, so the memo is always filed to the current gardener.
      */
     public string $mode = 'record';
 
     public ?TemporaryUploadedFile $audio = null;
 
     public string $transcript = '';
-
-    public string $email = '';
-
-    public function mount(): void
-    {
-        if (auth()->check()) {
-            $this->email = auth()->user()->email;
-        }
-    }
 
     public function setMode(string $mode): void
     {
@@ -41,20 +33,18 @@ class UploadForm extends Component
 
     protected function rules(): array
     {
-        $rules = ['email' => ['required', 'email']];
-
         if ($this->mode === 'paste') {
-            $rules['transcript'] = ['required', 'string', 'min:40', 'max:50000'];
-        } else {
-            $rules['audio'] = [
+            return ['transcript' => ['required', 'string', 'min:40', 'max:50000']];
+        }
+
+        return [
+            'audio' => [
                 'required',
                 'file',
                 'mimes:'.implode(',', config('pipeline.audio.mimes')),
                 'max:'.config('pipeline.audio.max_size_kb'),
-            ];
-        }
-
-        return $rules;
+            ],
+        ];
     }
 
     protected function messages(): array
@@ -67,8 +57,6 @@ class UploadForm extends Component
             'audio.max' => 'That recording is too large — anything under about an hour is fine.',
             'transcript.required' => 'Type or paste your garden notes first.',
             'transcript.min' => "Give us a few sentences at least — a short note doesn't tell us much.",
-            'email.required' => 'Enter your email so we know where to send your article.',
-            'email.email' => "That email address doesn't look quite right — double-check it?",
         ];
     }
 
@@ -76,9 +64,9 @@ class UploadForm extends Component
     {
         $this->validate();
 
+        $email = auth()->user()->email;
         $field = $this->mode === 'paste' ? 'transcript' : 'audio';
-
-        $key = 'submit:'.strtolower($this->email);
+        $key = 'submit:'.strtolower($email);
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $this->addError($field, 'Too many submissions — give us a few minutes to catch up.');
@@ -88,13 +76,13 @@ class UploadForm extends Component
 
         RateLimiter::hit($key, 600);
 
-        $submission = match ($this->mode) {
-            'paste' => $service->fromTranscript($this->transcript, $this->email),
-            'record' => $service->fromUpload($this->audio, $this->email, Submission::SOURCE_RECORD),
-            default => $service->fromUpload($this->audio, $this->email),
+        match ($this->mode) {
+            'paste' => $service->fromTranscript($this->transcript, $email),
+            'record' => $service->fromUpload($this->audio, $email, Submission::SOURCE_RECORD),
+            default => $service->fromUpload($this->audio, $email),
         };
 
-        return $this->redirectRoute('submissions.status', ['submission' => $submission->uuid]);
+        return $this->redirectRoute('dashboard', ['tab' => 'recordings']);
     }
 
     public function render()

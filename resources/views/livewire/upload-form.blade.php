@@ -92,7 +92,7 @@
                             Start over with a new recording
                         </button>
                         <p class="mt-4 text-base text-soil-700/80">
-                            Now enter your email below and press the green button.
+                            Now press the green button below.
                         </p>
                     </div>
 
@@ -146,14 +146,10 @@
                 </div>
             @endif
 
-            <div class="mx-auto max-w-md">
-                <label for="email" class="block text-base font-semibold text-garden-800">Your email</label>
-                <input type="email" id="email" wire:model="email" placeholder="you@example.com"
-                    autocomplete="email" inputmode="email"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                <p class="mt-2 text-base text-soil-700/70">We'll send your finished article here.</p>
-                @error('email') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
-            </div>
+            <p class="mx-auto max-w-md text-center text-base text-soil-700/70">
+                Posting as <span class="font-semibold text-garden-800">{{ auth()->user()->email }}</span> —
+                it'll land on your garden desk.
+            </p>
 
             <button type="submit" wire:loading.attr="disabled" wire:target="audio,submit"
                 class="mx-auto block w-full max-w-md rounded-xl bg-garden-700 px-6 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 disabled:opacity-50">
@@ -179,10 +175,4 @@
             <!--email_off-->{{ config('pipeline.inbound.address') ?: 'memos@'.(parse_url(config('app.url'), PHP_URL_HOST) ?? 'tipsfromthegarden.test') }}<!--/email_off-->
         </p>
     </div>
-
-    <p class="mt-10 text-center text-base text-soil-700/70">
-        Been here before?
-        <a href="{{ route('dashboard') }}" class="font-medium text-garden-700 underline">Sign in</a>
-        to see your past articles and teach us your writing voice.
-    </p>
 </div>
