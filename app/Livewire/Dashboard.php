@@ -3,13 +3,29 @@
 namespace App\Livewire;
 
 use App\Models\WritingSample;
+use App\Support\MagicLink;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class Dashboard extends Component
 {
+    /** Which tab is showing: 'articles', 'recordings', or 'voice'. */
+    #[Url]
+    public string $tab = 'articles';
+
     public string $sampleTitle = '';
 
     public string $sampleBody = '';
+
+    public function mount(): void
+    {
+        $this->tab = in_array($this->tab, MagicLink::TABS, true) ? $this->tab : 'articles';
+    }
+
+    public function setTab(string $tab): void
+    {
+        $this->tab = in_array($tab, MagicLink::TABS, true) ? $tab : 'articles';
+    }
 
     public function addSample(): void
     {
@@ -51,7 +67,8 @@ class Dashboard extends Component
         return view('livewire.dashboard', [
             'articles' => $user->articles()->latest()->get(),
             'samples' => $user->writingSamples()->latest()->get(),
-            'submissions' => $user->submissions()->whereNotIn('status', ['ready'])->latest()->limit(5)->get(),
+            'memos' => $user->submissions()->with(['transcript', 'article'])->latest()->get(),
+            'profileText' => $user->voiceProfile?->profile_text,
         ])->layout('components.layouts.app', ['title' => 'My garden desk — '.config('app.name')]);
     }
 }

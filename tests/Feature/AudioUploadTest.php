@@ -6,10 +6,13 @@ use App\Jobs\DeliverArticle;
 use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
 use App\Livewire\UploadForm;
+use App\Mail\MagicLinkMail;
 use App\Models\Submission;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -21,17 +24,26 @@ class AudioUploadTest extends TestCase
     public function test_an_in_browser_recording_is_accepted_and_chains_the_full_pipeline(): void
     {
         Bus::fake();
+        Mail::fake();
         Storage::fake(config('pipeline.audio.disk'));
 
-        Livewire::test(UploadForm::class)
+        $user = User::fromEmail('gardener@example.test');
+
+        Livewire::actingAs($user)
+            ->test(UploadForm::class)
             ->set('mode', 'record')
             ->set('audio', $this->fakeWav())
-            ->set('email', 'gardener@example.test')
             ->call('submit')
             ->assertHasNoErrors()
-            ->assertRedirect();
+            ->assertRedirect(route('dashboard', ['tab' => 'recordings']));
 
-        $this->assertDatabaseHas('submissions', ['source' => Submission::SOURCE_RECORD]);
+        $this->assertDatabaseHas('submissions', [
+            'user_id' => $user->id,
+            'source' => Submission::SOURCE_RECORD,
+        ]);
+
+        // Recording lives behind the login wall now — no sign-in link is sent.
+        Mail::assertNotSent(MagicLinkMail::class);
 
         Bus::assertChained([
             TranscribeAudio::class,
@@ -45,22 +57,29 @@ class AudioUploadTest extends TestCase
         Bus::fake();
         Storage::fake(config('pipeline.audio.disk'));
 
-        Livewire::test(UploadForm::class)
+        $user = User::fromEmail('gardener@example.test');
+
+        Livewire::actingAs($user)
+            ->test(UploadForm::class)
             ->set('mode', 'audio')
             ->set('audio', $this->fakeWav())
-            ->set('email', 'gardener@example.test')
             ->call('submit')
             ->assertHasNoErrors()
-            ->assertRedirect();
+            ->assertRedirect(route('dashboard', ['tab' => 'recordings']));
 
-        $this->assertDatabaseHas('submissions', ['source' => Submission::SOURCE_UPLOAD]);
+        $this->assertDatabaseHas('submissions', [
+            'user_id' => $user->id,
+            'source' => Submission::SOURCE_UPLOAD,
+        ]);
     }
 
     public function test_submitting_record_mode_without_a_recording_is_rejected(): void
     {
-        Livewire::test(UploadForm::class)
+        $user = User::fromEmail('gardener@example.test');
+
+        Livewire::actingAs($user)
+            ->test(UploadForm::class)
             ->set('mode', 'record')
-            ->set('email', 'gardener@example.test')
             ->call('submit')
             ->assertHasErrors(['audio' => 'required']);
 
@@ -73,11 +92,15 @@ class AudioUploadTest extends TestCase
         $this->assertContains('weba', config('pipeline.audio.mimes'));
     }
 
-    public function test_homepage_advertises_the_configured_inbound_address(): void
+    public function test_the_record_page_advertises_the_configured_inbound_address(): void
     {
         config(['pipeline.inbound.address' => 'memos@manorhousegardens.org']);
 
-        Livewire::test(UploadForm::class)->assertSee('memos@manorhousegardens.org');
+        $user = User::fromEmail('gardener@example.test');
+
+        Livewire::actingAs($user)
+            ->test(UploadForm::class)
+            ->assertSee('memos@manorhousegardens.org');
     }
 
     /**

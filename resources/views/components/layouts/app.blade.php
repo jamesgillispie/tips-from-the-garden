@@ -16,10 +16,8 @@
             <nav class="flex items-center gap-5 text-base">
                 @auth
                     <a href="{{ route('dashboard') }}" class="font-medium text-garden-700 hover:underline">My garden desk</a>
-                    <form method="POST" action="{{ route('auth.logout') }}">
-                        @csrf
-                        <button type="submit" class="text-soil-700/70 hover:underline">Sign out</button>
-                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="font-medium text-garden-700 hover:underline">Sign in</a>
                 @endauth
             </nav>
         </div>
