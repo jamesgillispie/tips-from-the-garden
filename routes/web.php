@@ -10,6 +10,14 @@ use App\Livewire\UploadForm;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/robots.txt', function () {
+    $body = request()->getHost() === 'journal.manorhousegardens.org'
+        ? "# Internal tool for journal.manorhousegardens.org.\nUser-agent: *\nDisallow: /\n"
+        : "# Public site for manorhousegardens.org.\nUser-agent: *\nDisallow:\n";
+
+    return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+});
+
 // The record/upload/type intake — signed-in gardeners only.
 // Guests hitting this are bounced to the /login landing.
 Route::get('/', UploadForm::class)->middleware('auth')->name('home');
