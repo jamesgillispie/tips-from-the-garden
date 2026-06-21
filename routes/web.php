@@ -1,13 +1,11 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\TranscriptController;
 use App\Http\Controllers\Webhooks\PostmarkInboundController;
 use App\Livewire\Dashboard;
 use App\Livewire\SubmissionStatus;
 use App\Livewire\UploadForm;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/robots.txt', function () {
@@ -18,8 +16,8 @@ Route::get('/robots.txt', function () {
     return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
 });
 
-// The record/upload/type intake — signed-in gardeners only.
-// Guests hitting this are bounced to the /login landing.
+// The record/upload/type intake — signed-in gardeners only. Guests are bounced
+// to Fortify's /login.
 Route::get('/', UploadForm::class)->middleware('auth')->name('home');
 
 // Public: live pipeline status for a submission.
@@ -31,21 +29,9 @@ Route::get('/a/{token}/download/{format}', [ArticleController::class, 'download'
     ->whereIn('format', ['md', 'pdf'])
     ->name('articles.download');
 
-// Magic-link auth. /login is the public front door; signed-in folks skip it.
-Route::get('/login', fn () => auth()->check() ? redirect()->route('home') : view('auth.login'))->name('login');
-Route::post('/auth/magic-link', [MagicLinkController::class, 'send'])
-    ->middleware('throttle:5,1')
-    ->name('auth.magic.send');
-Route::get('/auth/login/{user}', [MagicLinkController::class, 'login'])
-    ->middleware('signed')
-    ->name('auth.magic.login');
-Route::post('/auth/logout', function () {
-    Auth::logout();
-    session()->invalidate();
-    session()->regenerateToken();
-
-    return redirect()->route('home');
-})->name('auth.logout');
+// Auth — login, register, password reset, logout — is provided by Laravel
+// Fortify. Views are wired up in App\Providers\FortifyServiceProvider, and the
+// Cloudflare Turnstile gate lives in App\Http\Middleware\VerifyTurnstile.
 
 // Gardener dashboard (articles, recordings, writing voice).
 Route::get('/dashboard', Dashboard::class)

@@ -1,6 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\FortifyServiceProvider;
+use App\Providers\PipelineServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\PipelineServiceProvider::class,
+    AppServiceProvider::class,
+    FortifyServiceProvider::class,
+    PipelineServiceProvider::class,
 ];

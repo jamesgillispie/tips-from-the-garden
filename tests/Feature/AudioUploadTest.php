@@ -6,7 +6,6 @@ use App\Jobs\DeliverArticle;
 use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
 use App\Livewire\UploadForm;
-use App\Mail\MagicLinkMail;
 use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,9 +42,6 @@ class AudioUploadTest extends TestCase
             'user_id' => $user->id,
             'source' => Submission::SOURCE_RECORD,
         ]);
-
-        // Recording lives behind the login wall now — no sign-in link is sent.
-        Mail::assertNotSent(MagicLinkMail::class);
 
         Bus::assertChained([
             TranscribeAudio::class,
