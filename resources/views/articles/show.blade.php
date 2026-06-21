@@ -18,11 +18,11 @@
 
         <footer class="mt-10 flex flex-wrap items-center gap-3 border-t border-garden-100 pt-6">
             <a href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}"
-                class="rounded-xl bg-garden-700 px-5 py-3 text-base font-semibold text-white shadow transition hover:bg-garden-800">
+                class="rounded-xl bg-garden-700 px-5 py-3 text-base font-semibold text-white shadow transition hover:bg-garden-800 active:scale-[.98]">
                 Download PDF
             </a>
             <a href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}"
-                class="rounded-xl border-2 border-garden-100 px-5 py-3 text-base font-semibold text-garden-700 transition hover:bg-garden-50">
+                class="rounded-xl border-2 border-garden-100 px-5 py-3 text-base font-semibold text-garden-700 transition hover:bg-garden-50 active:scale-[.98]">
                 Download as text
             </a>
             @guest

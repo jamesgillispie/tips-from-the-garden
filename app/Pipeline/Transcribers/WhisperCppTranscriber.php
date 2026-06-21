@@ -14,6 +14,7 @@ class WhisperCppTranscriber implements TranscriberContract
         protected string $model,
         protected string $ffmpeg,
         protected int $threads = 8,
+        protected ?string $promptHint = null,
     ) {}
 
     public function transcribe(string $audioPath): TranscriptionResult
@@ -38,14 +39,26 @@ class WhisperCppTranscriber implements TranscriberContract
 
             $duration = $this->probeDuration($audioPath);
 
-            $run = Process::timeout(3600)->run([
+            $command = [
                 $this->binary,
                 '-m', $this->model,
                 '-f', $wavPath,
                 '-t', (string) $this->threads,
                 '--no-timestamps',
                 '--language', 'auto',
-            ]);
+            ];
+
+            // A garden-vocabulary initial prompt biases whisper toward the right
+            // spellings (e.g. "arugula", "Cherokee Purple") instead of phonetic
+            // guesses. --carry-initial-prompt keeps the bias active across the
+            // whole memo, not just the first decoding window.
+            if ($this->promptHint !== null && $this->promptHint !== '') {
+                $command[] = '--prompt';
+                $command[] = $this->promptHint;
+                $command[] = '--carry-initial-prompt';
+            }
+
+            $run = Process::timeout(3600)->run($command);
 
             if (! $run->successful()) {
                 throw new RuntimeException('whisper.cpp failed: '.$run->errorOutput());

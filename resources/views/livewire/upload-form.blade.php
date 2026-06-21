@@ -1,40 +1,13 @@
 <div>
-    <div class="mb-10 text-center">
-        <h1 class="font-serif text-4xl font-semibold text-garden-800 sm:text-5xl">
-            Talk to your garden.<br>We'll write it down.
+    <div class="mb-6 text-center sm:mb-8">
+        <h1 class="font-serif pb-10 text-2xl font-semibold text-garden-800 sm:text-4xl">
+            Talk to your garden
         </h1>
-        <p class="mx-auto mt-5 max-w-xl text-lg text-soil-700/80">
-            Tell us what's happening in your garden — out loud, in your own words —
-            and we'll turn it into a polished article in your own voice and email
-            it right back to you.
-        </p>
     </div>
 
-    <div class="rounded-2xl border border-garden-100 bg-white p-6 shadow-sm sm:p-8">
-        {{-- How would you like to share it? --}}
-        <div class="grid grid-cols-1 gap-2 rounded-xl bg-garden-50 p-2 sm:grid-cols-3"
-            role="tablist" aria-label="How would you like to share your memo?">
-            <button type="button" wire:click="setMode('record')" role="tab"
-                aria-selected="{{ $mode === 'record' ? 'true' : 'false' }}"
-                class="rounded-lg px-4 py-3 text-base font-semibold transition
-                    {{ $mode === 'record' ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
-                🎙️ Record right here
-            </button>
-            <button type="button" wire:click="setMode('audio')" role="tab"
-                aria-selected="{{ $mode === 'audio' ? 'true' : 'false' }}"
-                class="rounded-lg px-4 py-3 text-base font-semibold transition
-                    {{ $mode === 'audio' ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
-                📁 Upload a recording
-            </button>
-            <button type="button" wire:click="setMode('paste')" role="tab"
-                aria-selected="{{ $mode === 'paste' ? 'true' : 'false' }}"
-                class="rounded-lg px-4 py-3 text-base font-semibold transition
-                    {{ $mode === 'paste' ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
-                ✏️ Type your notes
-            </button>
-        </div>
-
-        <form wire:submit="submit" class="mt-8 space-y-7">
+    <div class="rounded-2xl border border-garden-100 bg-white p-5 shadow-sm sm:p-8">
+        <form wire:submit="submit" class="space-y-7">
+            {{-- The active input — recording is the default and sits right up top. --}}
             @if ($mode === 'record')
                 <div wire:key="mode-record" x-data="voiceRecorder" aria-live="polite" class="text-center">
 
@@ -42,7 +15,7 @@
                     <div x-show="state === 'unsupported'" x-cloak
                         class="mx-auto max-w-md rounded-xl bg-garden-50 p-5 text-base text-soil-700">
                         This browser can't record audio, but no matter — use the
-                        <strong>Upload a recording</strong> button above, or email
+                        <strong>Upload</strong> option below, or email
                         your memo to us instead (see below).
                     </div>
 
@@ -54,21 +27,31 @@
                             <span class="text-lg font-semibold leading-tight">Press to<br>record</span>
                         </button>
                         <p class="mx-auto mt-5 max-w-sm text-base text-soil-700/80">
-                            Then just talk — like you're telling a friend what's
-                            happening in your garden. Take all the time you need.
+                            Just talk, like you're telling a friend.
+                        </p>
+                        <p class="mx-auto mt-2 max-w-sm text-sm text-soil-700/60">
+                            Keep it between <strong>5 seconds</strong> and <strong>3 minutes</strong> —
+                            recording stops on its own at 3:00.
                         </p>
                     </div>
 
-                    {{-- Recording --}}
+                    {{-- Recording — live timer front and centre --}}
                     <div x-show="state === 'recording'" x-cloak>
-                        <p class="text-3xl font-semibold tabular-nums text-garden-800" x-text="clock"></p>
-                        <p class="mt-1 text-base font-medium text-red-600">● Recording — we're listening</p>
+                        <div class="flex items-center justify-center gap-2 text-red-600">
+                            <span class="inline-block h-3 w-3 animate-pulse rounded-full bg-red-600" aria-hidden="true"></span>
+                            <span class="text-base font-semibold uppercase tracking-wide">Recording — we're listening</span>
+                        </div>
+                        <p class="mt-2 text-6xl font-bold tabular-nums text-garden-800"
+                            x-text="clock" aria-label="Recording time" aria-live="off"></p>
                         <button type="button" x-on:click="stop"
-                            class="relative mx-auto mt-5 flex h-44 w-44 flex-col items-center justify-center gap-1 rounded-full bg-red-600 text-white shadow-lg transition hover:bg-red-700 active:scale-95">
+                            class="relative mx-auto mt-6 flex h-44 w-44 flex-col items-center justify-center gap-1 rounded-full bg-red-600 text-white shadow-lg transition hover:bg-red-700 active:scale-95">
                             <span class="absolute inset-0 -z-10 animate-ping rounded-full bg-red-400 opacity-40" aria-hidden="true"></span>
                             <span class="text-4xl" aria-hidden="true">⏹</span>
                             <span class="text-lg font-semibold leading-tight">Press when<br>you're done</span>
                         </button>
+                        <p class="mx-auto mt-4 max-w-sm text-sm text-soil-700/60">
+                            Give it at least 5 seconds — we'll stop automatically at 3 minutes.
+                        </p>
                     </div>
 
                     {{-- Saving the recording --}}
@@ -80,20 +63,23 @@
                         </div>
                     </div>
 
-                    {{-- Recording attached --}}
-                    <div x-show="state === 'attached'" x-cloak class="mx-auto max-w-md">
-                        <p class="text-lg font-semibold text-garden-800">
-                            ✅ Got it — your recording is saved (<span x-text="clock"></span>)
+                    {{-- Got it — handing the recording straight off to be written --}}
+                    <div x-show="state === 'submitting'" x-cloak class="mx-auto max-w-md">
+                        <div class="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-garden-100 border-t-garden-700"></div>
+                        <p class="mt-5 text-lg font-semibold text-garden-800">
+                            ✅ Got it — sending your memo off to be written…
                         </p>
-                        <p class="mt-1 text-base text-soil-700/80">Listen back if you like:</p>
-                        <audio controls x-bind:src="previewUrl" class="mt-3 w-full"></audio>
-                        <button type="button" x-on:click="discard"
-                            class="mt-3 text-base text-garden-700 underline">
-                            Start over with a new recording
-                        </button>
-                        <p class="mt-4 text-base text-soil-700/80">
-                            Now press the green button below.
+                        <p class="mt-1 text-base text-soil-700/80">
+                            Taking you to the progress page now.
                         </p>
+                    </div>
+
+                    {{-- Too short to use --}}
+                    <div x-show="state === 'error' && error === 'short'" x-cloak
+                        class="mx-auto max-w-md rounded-xl bg-amber-50 p-5 text-base text-soil-700">
+                        That was too quick to work with — a recording needs to be at
+                        least <strong>5 seconds</strong>.
+                        <button type="button" x-on:click="start" class="font-semibold text-garden-700 underline">Record again</button>.
                     </div>
 
                     {{-- Microphone blocked --}}
@@ -102,7 +88,7 @@
                         We couldn't reach your microphone. If your browser asked for
                         permission, choose <strong>Allow</strong> and
                         <button type="button" x-on:click="start" class="font-semibold text-garden-700 underline">try again</button>.
-                        Or use the <strong>Upload a recording</strong> button above.
+                        Or use the <strong>Upload</strong> option below.
                     </div>
 
                     {{-- Upload hiccup --}}
@@ -146,16 +132,43 @@
                 </div>
             @endif
 
+            {{-- Switch how you share — recording is the default, front-and-center above. --}}
+            <div class="grid grid-cols-3 gap-2 rounded-xl bg-garden-50 p-2"
+                role="tablist" aria-label="How would you like to share your memo?">
+                <button type="button" wire:click="setMode('record')" role="tab"
+                    aria-selected="{{ $mode === 'record' ? 'true' : 'false' }}"
+                    class="rounded-lg px-3 py-2.5 text-sm font-semibold transition sm:text-base
+                        {{ $mode === 'record' ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
+                    🎙️ Record
+                </button>
+                <button type="button" wire:click="setMode('audio')" role="tab"
+                    aria-selected="{{ $mode === 'audio' ? 'true' : 'false' }}"
+                    class="rounded-lg px-3 py-2.5 text-sm font-semibold transition sm:text-base
+                        {{ $mode === 'audio' ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
+                    📁 Upload
+                </button>
+                <button type="button" wire:click="setMode('paste')" role="tab"
+                    aria-selected="{{ $mode === 'paste' ? 'true' : 'false' }}"
+                    class="rounded-lg px-3 py-2.5 text-sm font-semibold transition sm:text-base
+                        {{ $mode === 'paste' ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
+                    ✏️ Type
+                </button>
+            </div>
+
             <p class="mx-auto max-w-md text-center text-base text-soil-700/70">
                 Posting as <span class="font-semibold text-garden-800">{{ auth()->user()->email }}</span> —
                 it'll land on your garden desk.
             </p>
 
-            <button type="submit" wire:loading.attr="disabled" wire:target="audio,submit"
-                class="mx-auto block w-full max-w-md rounded-xl bg-garden-700 px-6 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 disabled:opacity-50">
-                <span wire:loading.remove wire:target="submit">Turn it into an article</span>
-                <span wire:loading wire:target="submit">Sending it off…</span>
-            </button>
+            {{-- Record mode submits itself the moment the clip finishes uploading,
+                 so the manual button only shows for Upload and Type. --}}
+            @if ($mode !== 'record')
+                <button type="submit" wire:loading.attr="disabled" wire:target="audio,submit"
+                    class="mx-auto block w-full max-w-md rounded-xl bg-garden-700 px-6 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 active:scale-[.99] disabled:opacity-50">
+                    <span wire:loading.remove wire:target="submit">Turn it into a journal entry</span>
+                    <span wire:loading wire:target="submit">Sending it off…</span>
+                </button>
+            @endif
         </form>
     </div>
 

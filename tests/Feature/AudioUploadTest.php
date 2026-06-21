@@ -35,7 +35,9 @@ class AudioUploadTest extends TestCase
             ->set('audio', $this->fakeWav())
             ->call('submit')
             ->assertHasNoErrors()
-            ->assertRedirect(route('dashboard', ['tab' => 'recordings']));
+            ->assertRedirect(route('submissions.status', [
+                'submission' => Submission::where('source', Submission::SOURCE_RECORD)->value('uuid'),
+            ]));
 
         $this->assertDatabaseHas('submissions', [
             'user_id' => $user->id,
@@ -65,7 +67,9 @@ class AudioUploadTest extends TestCase
             ->set('audio', $this->fakeWav())
             ->call('submit')
             ->assertHasNoErrors()
-            ->assertRedirect(route('dashboard', ['tab' => 'recordings']));
+            ->assertRedirect(route('submissions.status', [
+                'submission' => Submission::where('source', Submission::SOURCE_UPLOAD)->value('uuid'),
+            ]));
 
         $this->assertDatabaseHas('submissions', [
             'user_id' => $user->id,

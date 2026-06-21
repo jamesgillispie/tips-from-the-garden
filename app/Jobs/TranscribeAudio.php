@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Submission;
 use App\Pipeline\Contracts\TranscriberContract;
+use App\Pipeline\Support\GardenLexicon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -30,9 +31,15 @@ class TranscribeAudio implements ShouldQueue
 
         $result = $transcriber->transcribe($audioPath);
 
+        // Correct known plant/cultivar mishearings (e.g. "rucola" -> "arugula")
+        // before the transcript is stored, written from, or shown to the gardener.
+        $text = config('pipeline.lexicon.enabled')
+            ? GardenLexicon::normalize($result->text)
+            : $result->text;
+
         // updateOrCreate keeps a retried attempt from leaving two transcripts.
         $this->submission->transcript()->updateOrCreate([], [
-            'raw_text' => $result->text,
+            'raw_text' => $text,
             'transcriber' => $transcriber->identifier(),
             'duration_seconds' => $result->durationSeconds,
         ]);

@@ -6,9 +6,9 @@
 // from there it flows through the exact same pipeline as an uploaded file.
 document.addEventListener('alpine:init', () => {
     Alpine.data('voiceRecorder', () => ({
-        // idle | recording | uploading | attached | error | unsupported
+        // idle | recording | uploading | submitting | error | unsupported
         state: 'idle',
-        error: null, // 'denied' | 'upload'
+        error: null, // 'denied' | 'upload' | 'short'
         seconds: 0,
         progress: 0,
         previewUrl: null,
@@ -17,7 +17,10 @@ document.addEventListener('alpine:init', () => {
         chunks: [],
         timer: null,
         cancelled: false,
-        maxSeconds: 3600,
+        starting: false,
+        tooShort: false,
+        minSeconds: 5,
+        maxSeconds: 180,
 
         init() {
             if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -45,12 +48,18 @@ document.addEventListener('alpine:init', () => {
         },
 
         async start() {
+            // Ignore a second tap while we're already starting or recording, so a
+            // quick double-press can't spin up two recorders at once.
+            if (this.starting || this.state === 'recording') return;
+            this.starting = true;
             this.error = null;
             this.cancelled = false;
+            this.tooShort = false;
 
             try {
                 this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             } catch {
+                this.starting = false;
                 this.state = 'error';
                 this.error = 'denied';
                 return;
@@ -67,14 +76,19 @@ document.addEventListener('alpine:init', () => {
 
             this.seconds = 0;
             this.state = 'recording';
+            this.starting = false;
             this.timer = setInterval(() => {
                 this.seconds++;
+                // Hard cap: stop on its own at the 3-minute mark.
                 if (this.seconds >= this.maxSeconds) this.stop();
             }, 1000);
         },
 
         stop() {
             clearInterval(this.timer);
+            // Too brief to be worth transcribing — remember it so finish() bails
+            // out instead of uploading a near-empty clip.
+            this.tooShort = this.state === 'recording' && this.seconds < this.minSeconds;
             if (this.recorder && this.recorder.state !== 'inactive') {
                 this.recorder.stop();
             }
@@ -92,19 +106,38 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            // A quick stop never reaches the transcriber — we ask for a redo.
+            if (this.tooShort) {
+                this.tooShort = false;
+                this.chunks = [];
+                this.seconds = 0;
+                this.state = 'error';
+                this.error = 'short';
+                return;
+            }
+
             const type = this.recorder?.mimeType || 'audio/webm';
             const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
             const blob = new Blob(this.chunks, { type });
             const file = new File([blob], `voice-memo.${ext}`, { type });
 
-            this.previewUrl = URL.createObjectURL(blob);
             this.progress = 0;
             this.state = 'uploading';
 
             this.$wire.upload(
                 'audio',
                 file,
-                () => { this.state = 'attached'; },
+                // Upload finished — hand it straight off to be written and send
+                // the gardener to the live processing page. No extra tap needed.
+                () => {
+                    this.state = 'submitting';
+                    this.$wire.submit().then(() => {
+                        // Still here after the round-trip means it didn't redirect
+                        // (rate limit, oversize file…). Drop back so they can retry;
+                        // the server's error message shows below.
+                        if (this.state === 'submitting') this.discard();
+                    });
+                },
                 () => { this.state = 'error'; this.error = 'upload'; },
                 (event) => { this.progress = event.detail.progress; },
             );

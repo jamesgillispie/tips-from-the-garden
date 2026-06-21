@@ -8,7 +8,7 @@ return [
     ],
 
     'articles' => [
-        'title' => 'Articles',
+        'title' => 'Journal Entries',
         'module' => true,
     ],
 

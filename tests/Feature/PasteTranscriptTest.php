@@ -68,7 +68,9 @@ class PasteTranscriptTest extends TestCase
             ->set('transcript', self::SAMPLE)
             ->call('submit')
             ->assertHasNoErrors()
-            ->assertRedirect(route('dashboard', ['tab' => 'recordings']));
+            ->assertRedirect(route('submissions.status', [
+                'submission' => Submission::where('source', Submission::SOURCE_PASTE)->value('uuid'),
+            ]));
 
         $this->assertDatabaseHas('submissions', [
             'source' => Submission::SOURCE_PASTE,

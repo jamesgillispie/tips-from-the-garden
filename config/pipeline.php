@@ -26,6 +26,21 @@ return [
         'threads' => env('WHISPER_THREADS', 8),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Garden lexicon
+    |--------------------------------------------------------------------------
+    |
+    | New-England plant/cultivar vocabulary (App\Pipeline\Support\GardenLexicon)
+    | that primes whisper's recognition and corrects known mishearings in the
+    | transcript (e.g. "rucola" -> "arugula"). Toggle off with GARDEN_LEXICON=false.
+    |
+    */
+
+    'lexicon' => [
+        'enabled' => env('GARDEN_LEXICON', true),
+    ],
+
     'ollama' => [
         'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
         'model' => env('OLLAMA_MODEL', 'qwen3:32b'),

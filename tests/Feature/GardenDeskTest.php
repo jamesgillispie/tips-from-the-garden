@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Livewire\Dashboard;
+use App\Models\Article;
 use App\Models\Submission;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
@@ -69,6 +71,106 @@ class GardenDeskTest extends TestCase
 
         $this->get($url)->assertRedirect(route('dashboard', ['tab' => 'recordings']));
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_a_gardener_can_delete_an_article_and_keep_the_recording(): void
+    {
+        $user = User::fromEmail('rose@example.test');
+        $memo = $this->memoFor($user, 'The dahlias are blooming early this year.');
+        $article = $this->articleFor($memo);
+
+        Livewire::actingAs($user)
+            ->test(Dashboard::class)
+            ->call('deleteArticle', $article->id)
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('articles', ['id' => $article->id]);
+        $this->assertNotSoftDeleted('submissions', ['id' => $memo->id]);
+    }
+
+    public function test_a_gardener_can_delete_a_recording_along_with_its_article(): void
+    {
+        $user = User::fromEmail('rose@example.test');
+        $memo = $this->memoFor($user, 'The dahlias are blooming early this year.');
+        $article = $this->articleFor($memo);
+
+        Livewire::actingAs($user)
+            ->test(Dashboard::class)
+            ->call('deleteMemo', $memo->id)
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('submissions', ['id' => $memo->id]);
+        $this->assertSoftDeleted('articles', ['id' => $article->id]);
+    }
+
+    public function test_a_gardener_cannot_delete_another_gardeners_recording(): void
+    {
+        $owner = User::fromEmail('owner@example.test');
+        $memo = $this->memoFor($owner, 'My private garden notes.');
+
+        $intruder = User::fromEmail('intruder@example.test');
+
+        try {
+            Livewire::actingAs($intruder)
+                ->test(Dashboard::class)
+                ->call('deleteMemo', $memo->id);
+        } catch (ModelNotFoundException $e) {
+            // Expected — submissions are scoped to their owner.
+        }
+
+        $this->assertNotSoftDeleted('submissions', ['id' => $memo->id]);
+    }
+
+    public function test_a_gardener_can_search_their_journal_entries_by_title_and_body(): void
+    {
+        $user = User::fromEmail('rose@example.test');
+        $this->articleFor($this->memoFor($user, 'memo one'), 'Tomatoes in June', 'Staking the heirlooms today.');
+        $this->articleFor($this->memoFor($user, 'memo two'), 'Pruning roses', 'The climbers need a hard cut.');
+
+        Livewire::actingAs($user)
+            ->test(Dashboard::class)
+            ->set('tab', 'articles')
+            // Matches on the title…
+            ->set('search', 'tomatoes')
+            ->assertSee('Tomatoes in June')
+            ->assertDontSee('Pruning roses')
+            // …and on the body text the gardener can't see in the list.
+            ->set('search', 'climbers')
+            ->assertSee('Pruning roses')
+            ->assertDontSee('Tomatoes in June')
+            // Clearing the box brings everything back.
+            ->set('search', '')
+            ->assertSee('Tomatoes in June')
+            ->assertSee('Pruning roses');
+    }
+
+    public function test_search_only_returns_the_signed_in_gardeners_entries(): void
+    {
+        $owner = User::fromEmail('owner@example.test');
+        $this->articleFor($this->memoFor($owner, 'owner memo'), 'Owner tomatoes');
+
+        $intruder = User::fromEmail('intruder@example.test');
+        $this->articleFor($this->memoFor($intruder, 'intruder memo'), 'Intruder tomatoes');
+
+        Livewire::actingAs($intruder)
+            ->test(Dashboard::class)
+            ->set('tab', 'articles')
+            ->set('search', 'tomatoes')
+            ->assertSee('Intruder tomatoes')
+            ->assertDontSee('Owner tomatoes');
+    }
+
+    private function articleFor(
+        Submission $memo,
+        string $title = 'Early dahlias',
+        string $bodyMd = 'They came up before the last frost.',
+    ): Article {
+        return Article::create([
+            'user_id' => $memo->user_id,
+            'submission_id' => $memo->id,
+            'title' => $title,
+            'body_md' => $bodyMd,
+        ]);
     }
 
     private function memoFor(User $user, string $transcript): Submission

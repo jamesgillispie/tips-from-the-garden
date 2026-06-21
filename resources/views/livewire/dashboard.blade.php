@@ -20,9 +20,15 @@
         </form>
     </div>
 
+    @if (session('desk-flash'))
+        <div class="rounded-xl bg-garden-100 px-4 py-3 text-base text-garden-800">
+            {{ session('desk-flash') }}
+        </div>
+    @endif
+
     {{-- Tabs --}}
     <div class="grid grid-cols-3 gap-2 rounded-xl bg-garden-50 p-2" role="tablist" aria-label="Your garden desk">
-        @foreach (['articles' => 'Articles', 'recordings' => 'Recordings', 'voice' => 'My Voice'] as $key => $label)
+        @foreach (['articles' => 'Journal', 'recordings' => 'Recordings', 'voice' => 'My Voice'] as $key => $label)
             @php
                 $count = match ($key) {
                     'articles' => $articles->count(),
@@ -39,14 +45,32 @@
         @endforeach
     </div>
 
-    {{-- ─────────────────────────  ARTICLES  ───────────────────────── --}}
+    {{-- ─────────────────────────  JOURNAL  ───────────────────────── --}}
     @if ($tab === 'articles')
-        <section wire:key="tab-articles">
+        <section wire:key="tab-articles" class="space-y-4">
+            {{-- Search across the title and full text of every journal entry. --}}
+            <div class="relative">
+                <input type="text" wire:model.live.debounce.300ms="search"
+                    placeholder="Search your journal entries…" aria-label="Search your journal entries"
+                    autocomplete="off" class="block w-full rounded-xl border-2 border-garden-100 px-4 py-3 pr-10 text-base">
+                @if ($search !== '')
+                    <button type="button" wire:click="$set('search', '')" aria-label="Clear search"
+                        class="absolute inset-y-0 right-3 flex items-center text-soil-700/50 hover:text-soil-700">✕</button>
+                @endif
+            </div>
+
             @if ($articles->isEmpty())
-                <p class="rounded-xl border border-dashed border-garden-100 bg-white p-6 text-base text-soil-700/70">
-                    No articles yet. <a href="{{ route('home') }}" class="font-medium text-garden-700 underline">Record your first memo</a>
-                    and your finished article will show up here.
-                </p>
+                @if ($search !== '')
+                    <p class="rounded-xl border border-dashed border-garden-100 bg-white p-6 text-base text-soil-700/70">
+                        No journal entries match “{{ $search }}”.
+                        <button type="button" wire:click="$set('search', '')" class="font-medium text-garden-700 underline">Clear search</button>
+                    </p>
+                @else
+                    <p class="rounded-xl border border-dashed border-garden-100 bg-white p-6 text-base text-soil-700/70">
+                        No journal entries yet. <a href="{{ route('home') }}" class="font-medium text-garden-700 underline">Record your first memo</a>
+                        and your finished journal entry will show up here.
+                    </p>
+                @endif
             @else
                 <ul class="divide-y divide-garden-100 rounded-xl border border-garden-100 bg-white">
                     @foreach ($articles as $article)
@@ -57,11 +81,14 @@
                                 </a>
                                 <p class="text-sm text-soil-700/60">{{ $article->created_at->format('F j, Y') }}</p>
                             </div>
-                            <div class="flex shrink-0 gap-3 text-sm">
+                            <div class="flex shrink-0 items-center gap-3 text-sm">
                                 <a class="font-medium text-garden-700 underline"
                                     href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}">PDF</a>
                                 <a class="font-medium text-garden-700 underline"
                                     href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}">Text</a>
+                                <button type="button" wire:click="deleteArticle({{ $article->id }})"
+                                    wire:confirm="Delete this journal entry? Your original recording stays in Recordings. This can't be undone."
+                                    class="font-medium text-red-600 underline">Delete</button>
                             </div>
                         </li>
                     @endforeach
@@ -111,15 +138,18 @@
                                 </p>
                             @endif
 
-                            <div class="mt-3 flex flex-wrap gap-4 text-sm">
+                            <div class="mt-3 flex flex-wrap items-center gap-4 text-sm">
                                 @if ($memo->isReady() && $memo->article)
-                                    <a href="{{ $memo->article->publicUrl() }}" class="font-medium text-garden-700 underline">Read the article</a>
-                                @elseif (! $memo->isFailed())
+                                    <a href="{{ $memo->article->publicUrl() }}" class="font-medium text-garden-700 underline">Read the journal entry</a>
+                                @elseif (! $memo->isReady() && ! $memo->isFailed())
                                     <a href="{{ route('submissions.status', ['submission' => $memo->uuid]) }}" class="font-medium text-garden-700 underline">Watch progress</a>
                                 @endif
                                 @if ($memo->transcript)
                                     <a href="{{ route('memos.transcript', ['submission' => $memo->uuid]) }}" class="font-medium text-garden-700 underline">Download transcript (.md)</a>
                                 @endif
+                                <button type="button" wire:click="deleteMemo({{ $memo->id }})"
+                                    wire:confirm="Delete this recording? Its journal entry and transcript go too. This can't be undone."
+                                    class="font-medium text-red-600 underline">Delete</button>
                             </div>
                         </li>
                     @endforeach
@@ -132,7 +162,7 @@
         <section wire:key="tab-voice" class="space-y-4">
             <p class="text-base text-soil-700/70">
                 Paste samples of your own writing — blog posts, newsletters, garden journal
-                entries. The more we have, the more your articles sound like you.
+                entries. The more we have, the more your journal entries sound like you.
                 Memos you send become samples automatically.
             </p>
 

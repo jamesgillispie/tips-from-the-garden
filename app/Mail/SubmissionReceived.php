@@ -21,7 +21,7 @@ class SubmissionReceived extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Got your voice memo — your article is on its way',
+            subject: 'Got your voice memo — your journal entry is on its way',
         );
     }
 

@@ -76,13 +76,15 @@ class UploadForm extends Component
 
         RateLimiter::hit($key, 600);
 
-        match ($this->mode) {
+        $submission = match ($this->mode) {
             'paste' => $service->fromTranscript($this->transcript, $email),
             'record' => $service->fromUpload($this->audio, $email, Submission::SOURCE_RECORD),
             default => $service->fromUpload($this->audio, $email),
         };
 
-        return $this->redirectRoute('dashboard', ['tab' => 'recordings']);
+        // Straight to the live processing page — it polls the pipeline and then
+        // shows the finished article in place.
+        return $this->redirectRoute('submissions.status', ['submission' => $submission->uuid]);
     }
 
     public function render()

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Pipeline\Contracts\TranscriberContract;
 use App\Pipeline\Contracts\WriterContract;
+use App\Pipeline\Support\GardenLexicon;
 use App\Pipeline\Transcribers\FakeTranscriber;
 use App\Pipeline\Transcribers\WhisperCppTranscriber;
 use App\Pipeline\Writers\AnthropicWriter;
@@ -25,6 +26,7 @@ class PipelineServiceProvider extends ServiceProvider
                     model: config('pipeline.whisper_cpp.model'),
                     ffmpeg: config('pipeline.whisper_cpp.ffmpeg'),
                     threads: (int) config('pipeline.whisper_cpp.threads'),
+                    promptHint: config('pipeline.lexicon.enabled') ? GardenLexicon::whisperPrompt() : null,
                 ),
                 'fake' => new FakeTranscriber,
                 default => throw new InvalidArgumentException("Unknown transcriber driver [{$driver}]."),

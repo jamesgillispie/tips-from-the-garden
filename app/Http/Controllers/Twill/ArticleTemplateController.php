@@ -28,7 +28,7 @@ class ArticleTemplateController extends BaseModuleController
         $form->add(
             Input::make()->name('structure_prompt')->label('Structure prompt')
                 ->type('textarea')->rows(16)
-                ->note('Instructions the writer model follows to structure the article.')
+                ->note('Instructions the writer model follows to structure the journal entry.')
         );
 
         $form->add(

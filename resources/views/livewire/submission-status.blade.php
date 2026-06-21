@@ -7,10 +7,10 @@
             <h1 class="mt-4 font-serif text-3xl font-semibold text-garden-800">
                 {{ $submission->article->title }}
             </h1>
-            <p class="mt-3 text-lg text-soil-700/80">Your article is ready.</p>
+            <p class="mt-3 text-lg text-soil-700/80">Your journal entry is ready.</p>
             <a href="{{ $submission->article->publicUrl() }}"
-                class="mt-6 inline-block rounded-xl bg-garden-700 px-8 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800">
-                Read your article
+                class="mt-6 inline-block rounded-xl bg-garden-700 px-8 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 active:scale-[.98]">
+                Read your journal entry
             </a>
         </div>
     @elseif ($submission->isFailed())
@@ -18,13 +18,26 @@
             <div class="text-6xl">🥀</div>
             <h1 class="mt-4 font-serif text-2xl font-semibold">Something went wrong</h1>
             <p class="mt-3 text-base text-soil-700/80">
-                We hit a snag turning your memo into an article — it does happen
+                We hit a snag turning your memo into a journal entry — it does happen
                 now and then. Your recording reached us safely, so please try
                 sending it once more.
             </p>
             <a href="{{ route('home') }}"
-                class="mt-6 inline-block rounded-xl bg-garden-700 px-8 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800">
+                class="mt-6 inline-block rounded-xl bg-garden-700 px-8 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 active:scale-[.98]">
                 Try again
+            </a>
+        </div>
+    @elseif ($submission->isReady())
+        {{-- Ready, but the journal entry has since been deleted from the garden desk. --}}
+        <div class="rounded-2xl border border-garden-100 bg-white p-10">
+            <div class="text-6xl">🍂</div>
+            <h1 class="mt-4 font-serif text-2xl font-semibold text-garden-800">This journal entry was deleted</h1>
+            <p class="mt-3 text-base text-soil-700/80">
+                It's no longer on the garden desk. You can record a new memo any time.
+            </p>
+            <a href="{{ route('home') }}"
+                class="mt-6 inline-block rounded-xl bg-garden-700 px-8 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 active:scale-[.98]">
+                Record a memo
             </a>
         </div>
     @else
@@ -35,7 +48,7 @@
             </h1>
             <p class="mt-3 text-base text-soil-700/80">
                 This usually takes a few minutes. You can close this page —
-                we'll email you the article either way.
+                we'll email you the journal entry either way.
             </p>
 
             @php

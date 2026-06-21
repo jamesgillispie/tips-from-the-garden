@@ -33,4 +33,33 @@
         outline: 3px solid var(--color-garden-600);
         outline-offset: 2px;
     }
+
+    /* Tappable things: kill the blue tap-flash on iOS/Android, opt into
+       instant taps (no 300ms delay), and animate the pressed state so a
+       fingertip always gets feedback that the press registered. */
+    a,
+    button,
+    summary,
+    [role="button"],
+    [role="tab"] {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: scale 0.1s ease, filter 0.12s ease,
+            background-color 0.15s ease, color 0.15s ease;
+    }
+
+    /* Buttons + tabs visibly press in (mouse-down or touch). Uses the CSS
+       `scale` property so it never fights Tailwind's transform utilities;
+       a component's own active: utility (e.g. the record button) still wins. */
+    button:not(:disabled):active,
+    [role="button"]:not([aria-disabled="true"]):active,
+    [role="tab"]:active {
+        scale: 0.97;
+        filter: brightness(0.95);
+    }
+
+    /* Plain text links get a gentler dim — no scale. */
+    a:not([role="button"]):active {
+        filter: brightness(0.9);
+    }
 }

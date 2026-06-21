@@ -1,12 +1,12 @@
 @props([
-    'description' => 'Record a memo in your garden. Get back an article in your own voice.',
+    'description' => 'Record a memo in your garden. Get back a journal entry in your own voice.',
     'ogImage' => null,
     'title' => config('app.name'),
 ])
 
 @php
     $metaTitle = $title ?: config('app.name');
-    $metaDescription = $description ?: 'Record a memo in your garden. Get back an article in your own voice.';
+    $metaDescription = $description ?: 'Record a memo in your garden. Get back a journal entry in your own voice.';
     $metaImage = $ogImage ?: asset('og-image.png');
 @endphp
 
@@ -46,13 +46,22 @@
 </head>
 <body class="min-h-screen bg-garden-50 text-soil-700 antialiased">
     <header class="border-b border-garden-100 bg-white">
-        <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-            <a href="{{ route('home') }}" class="font-serif text-xl font-semibold text-garden-800">
-                🌱 {{ config('app.name') }}
+        <div class="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-4">
+            <a href="{{ route('home') }}"
+                class="flex shrink-0 items-center whitespace-nowrap font-serif text-lg font-semibold text-garden-800 sm:text-xl">
+                🌱&nbsp;{{ config('app.name') }}
             </a>
-            <nav class="flex items-center gap-5 text-base">
+            <nav class="flex shrink-0 items-center gap-5 text-base">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="font-medium text-garden-700 hover:underline">My garden desk</a>
+                    <a href="{{ route('dashboard') }}" title="My garden desk" aria-label="My garden desk"
+                        class="inline-flex items-center gap-2 font-medium text-garden-700 hover:text-garden-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.8" stroke="currentColor" class="h-6 w-6" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" />
+                        </svg>
+                        <span class="hidden sm:inline">My garden desk</span>
+                    </a>
                 @else
                     <a href="{{ route('login') }}" class="font-medium text-garden-700 hover:underline">Sign in</a>
                 @endauth
@@ -65,7 +74,7 @@
     </main>
 
     <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-sm text-soil-700/70">
-        Record a memo in your garden. Get back an article in your own voice.
+        Record a memo in your garden. Get back a journal entry in your own voice.
     </footer>
 
     @livewireScripts

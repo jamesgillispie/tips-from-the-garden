@@ -2,7 +2,7 @@
 # We hit a snag
 
 We're sorry — something went wrong on our end while turning your memo into
-an article, and it didn't finish. Your recording reached us just fine; the
+a journal entry, and it didn't finish. Your recording reached us just fine; the
 trouble was all ours.
 
 Please send it once more — that usually clears it right up.

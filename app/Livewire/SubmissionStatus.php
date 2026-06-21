@@ -19,6 +19,6 @@ class SubmissionStatus extends Component
         $this->submission->refresh();
 
         return view('livewire.submission-status')
-            ->layout('components.layouts.app', ['title' => 'Your article — '.config('app.name')]);
+            ->layout('components.layouts.app', ['title' => 'Your journal entry — '.config('app.name')]);
     }
 }

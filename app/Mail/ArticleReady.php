@@ -20,7 +20,7 @@ class ArticleReady extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your article is ready: '.$this->article->title,
+            subject: 'Your journal entry is ready: '.$this->article->title,
         );
     }
 

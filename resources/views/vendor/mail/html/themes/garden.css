@@ -1,0 +1,309 @@
+/* Tips From The Garden — email theme.
+   Mirrors the site's design tokens (resources/css/app.css): the garden/soil
+   palette, serif headings, soft-green page, white rounded card, garden-green
+   buttons. Structure follows Laravel's default theme so the CSS inliner can
+   apply every rule. */
+
+/* Base */
+
+body,
+body *:not(html):not(style):not(br):not(tr):not(code) {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    position: relative;
+}
+
+body {
+    -webkit-text-size-adjust: none;
+    background-color: #f4f7f0; /* garden-50 */
+    color: #4e3d30; /* soil-700 */
+    height: 100%;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    width: 100% !important;
+}
+
+p,
+ul,
+ol,
+blockquote {
+    line-height: 1.6;
+    text-align: start;
+}
+
+a {
+    color: #3a5530; /* garden-700 */
+}
+
+a img {
+    border: none;
+}
+
+/* Typography — headings use the site's serif stack in deep garden green. */
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Palatino", "Book Antiqua", Georgia, serif;
+    color: #2d4226; /* garden-800 */
+    font-weight: 600;
+    margin-top: 0;
+    text-align: start;
+}
+
+h1 {
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+h3 {
+    font-size: 17px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.6em;
+    margin-top: 0;
+    text-align: left;
+}
+
+p.sub {
+    font-size: 12px;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* Layout */
+
+.wrapper {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #f4f7f0; /* garden-50 page */
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.content {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/* Header — the wordmark, serif and green like the site's H1. */
+
+.header {
+    padding: 28px 0;
+    text-align: center;
+}
+
+.header a {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Palatino", "Book Antiqua", Georgia, serif;
+    color: #2d4226; /* garden-800 */
+    font-size: 22px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* Logo */
+
+.logo {
+    height: 75px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    max-height: 75px;
+    width: 75px;
+}
+
+/* Body */
+
+.body {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #f4f7f0; /* garden-50 */
+    border-bottom: 1px solid #f4f7f0;
+    border-top: 1px solid #f4f7f0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.inner-body {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 570px;
+    background-color: #ffffff;
+    border-color: #e4ecdb; /* garden-100 */
+    border-radius: 16px;
+    border-width: 1px;
+    box-shadow: 0 1px 3px 0 rgba(45, 66, 38, 0.08), 0 1px 2px -1px rgba(45, 66, 38, 0.06);
+    margin: 0 auto;
+    padding: 0;
+    width: 570px;
+}
+
+.inner-body a {
+    word-break: break-all;
+}
+
+/* Subcopy */
+
+.subcopy {
+    border-top: 1px solid #e4ecdb; /* garden-100 */
+    margin-top: 25px;
+    padding-top: 25px;
+}
+
+.subcopy p {
+    font-size: 14px;
+    color: #6b5b4d; /* softened soil */
+}
+
+/* Footer */
+
+.footer {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 570px;
+    margin: 0 auto;
+    padding: 0;
+    text-align: center;
+    width: 570px;
+}
+
+.footer p {
+    color: #8a8276; /* muted soil */
+    font-size: 12px;
+    text-align: center;
+}
+
+.footer a {
+    color: #8a8276;
+    text-decoration: underline;
+}
+
+/* Tables */
+
+.table table {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 30px auto;
+    width: 100%;
+}
+
+.table th {
+    border-bottom: 1px solid #e4ecdb;
+    margin: 0;
+    padding-bottom: 8px;
+}
+
+.table td {
+    color: #4e3d30; /* soil-700 */
+    font-size: 15px;
+    line-height: 18px;
+    margin: 0;
+    padding: 10px 0;
+}
+
+.content-cell {
+    max-width: 100vw;
+    padding: 36px;
+}
+
+/* Buttons — garden-green, generous padding, rounded like the site's. */
+
+.action {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 30px auto;
+    padding: 0;
+    text-align: center;
+    width: 100%;
+    float: unset;
+}
+
+.button {
+    -webkit-text-size-adjust: none;
+    border-radius: 12px;
+    color: #ffffff;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 600;
+    overflow: hidden;
+    text-decoration: none;
+}
+
+.button-blue,
+.button-primary {
+    background-color: #3a5530; /* garden-700 */
+    border-bottom: 14px solid #3a5530;
+    border-left: 26px solid #3a5530;
+    border-right: 26px solid #3a5530;
+    border-top: 14px solid #3a5530;
+}
+
+.button-green,
+.button-success {
+    background-color: #4a6b3a; /* garden-600 */
+    border-bottom: 14px solid #4a6b3a;
+    border-left: 26px solid #4a6b3a;
+    border-right: 26px solid #4a6b3a;
+    border-top: 14px solid #4a6b3a;
+}
+
+.button-red,
+.button-error {
+    background-color: #a4502e; /* warm terracotta, palette-friendly */
+    border-bottom: 14px solid #a4502e;
+    border-left: 26px solid #a4502e;
+    border-right: 26px solid #a4502e;
+    border-top: 14px solid #a4502e;
+}
+
+/* Panels */
+
+.panel {
+    border-left: #3a5530 solid 4px; /* garden-700 */
+    margin: 21px 0;
+}
+
+.panel-content {
+    background-color: #f4f7f0; /* garden-50 */
+    color: #4e3d30;
+    padding: 16px;
+}
+
+.panel-content p {
+    color: #4e3d30;
+}
+
+.panel-item {
+    padding: 0;
+}
+
+.panel-item p:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Utilities */
+
+.break-all {
+    word-break: break-all;
+}

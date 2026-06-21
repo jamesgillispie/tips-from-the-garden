@@ -117,8 +117,8 @@ class Submission extends Model
             self::STATUS_RECEIVED => 'Received — waiting in line',
             self::STATUS_TRANSCRIBING => 'Listening to your memo…',
             self::STATUS_TRANSCRIBED => 'Transcribed — warming up the writer',
-            self::STATUS_WRITING => 'Writing your article…',
-            self::STATUS_READY => 'Your article is ready!',
+            self::STATUS_WRITING => 'Writing your journal entry…',
+            self::STATUS_READY => 'Your journal entry is ready!',
             self::STATUS_FAILED => 'Something went wrong',
             default => $this->status,
         };
