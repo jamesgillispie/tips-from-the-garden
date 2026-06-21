@@ -7,33 +7,32 @@
 
         <form method="POST" action="{{ route('password.update') }}" class="mt-6 space-y-5">
             @csrf
+            {{-- Carries the signed reset token from the emailed link. --}}
             <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-            <div>
-                <label for="email" class="block text-base font-semibold text-garden-800">Email</label>
-                <input type="email" id="email" name="email" required value="{{ old('email', $request->email) }}"
-                    autocomplete="email" inputmode="email"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                @error('email') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
-            </div>
+            <flux:field>
+                <flux:label>Email</flux:label>
+                <flux:input type="email" name="email" required :value="old('email', $request->email)"
+                    autocomplete="email" inputmode="email" />
+                <flux:error name="email" />
+            </flux:field>
 
-            <div>
-                <label for="password" class="block text-base font-semibold text-garden-800">New password</label>
-                <input type="password" id="password" name="password" required autocomplete="new-password"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                @error('password') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
-            </div>
+            <flux:field>
+                <flux:label>New password</flux:label>
+                <flux:input type="password" name="password" required autocomplete="new-password" viewable />
+                <flux:error name="password" />
+            </flux:field>
 
-            <div>
-                <label for="password_confirmation" class="block text-base font-semibold text-garden-800">Confirm new password</label>
-                <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-            </div>
+            <flux:field>
+                <flux:label>Confirm new password</flux:label>
+                <flux:input type="password" name="password_confirmation" required autocomplete="new-password" viewable />
+            </flux:field>
 
-            <button type="submit"
-                class="w-full rounded-xl bg-garden-700 px-6 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800">
+            {{-- No Turnstile here — the signed token in the link already gates access,
+                 so the button is live immediately. --}}
+            <flux:button type="submit" variant="primary" class="w-full">
                 Save new password
-            </button>
+            </flux:button>
         </form>
     </div>
 </x-layouts.app>

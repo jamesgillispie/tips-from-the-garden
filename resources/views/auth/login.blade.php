@@ -21,37 +21,37 @@
             @csrf
             <flux:field>
                 <flux:label>Your email</flux:label>
-                <flux:input type="email" id="email" name="email" required :value="old('email')"
+                <flux:input type="email" name="email" required :value="old('email')"
                     placeholder="you@example.com" autocomplete="email" inputmode="email" />
                 <flux:error name="email" />
             </flux:field>
 
-            <div>
-                <div class="flex items-baseline justify-between">
-                    <label for="password" class="block text-base font-semibold text-garden-800">Password</label>
-                    <a href="{{ route('password.request') }}" class="text-sm font-medium text-garden-700 hover:underline">Forgot?</a>
+            <flux:field>
+                {{-- Label row carries the "Forgot?" link — a plain anchor, so the
+                     Turnstile gate (which only touches <button>s) never disables it. --}}
+                <div class="flex items-center justify-between">
+                    <flux:label>Password</flux:label>
+                    <flux:link href="{{ route('password.request') }}" variant="subtle" class="text-sm">Forgot?</flux:link>
                 </div>
-                <input type="password" id="password" name="password" required autocomplete="current-password"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                @error('password') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
-            </div>
+                <flux:input type="password" name="password" required autocomplete="current-password" viewable />
+                <flux:error name="password" />
+            </flux:field>
 
-            <label class="flex items-center gap-2 text-base text-soil-700">
-                <input type="checkbox" name="remember" value="1"
-                    class="h-4 w-4 rounded border-garden-200 text-garden-700 focus:ring-garden-600">
-                Keep me signed in
-            </label>
+            <flux:checkbox name="remember" value="1" label="Keep me signed in" />
 
             <x-turnstile />
 
+            {{-- Stays disabled until Turnstile hands us a fresh token (see x-turnstile);
+                 data-turnstile-gate is the hook its callbacks toggle. --}}
             <flux:button type="submit" id="signin-submit" variant="primary" class="w-full" disabled data-turnstile-gate>
                 Sign in
             </flux:button>
         </form>
 
-        <p class="mt-6 text-center text-base text-soil-700/80">
-            New here?
-            <a href="{{ route('register') }}" class="font-semibold text-garden-700 hover:underline">Create an account</a>
+        <flux:separator class="my-7" text="new to the garden?" />
+
+        <p class="text-center text-base text-soil-700/80">
+            <flux:link href="{{ route('register') }}" class="font-semibold">Create an account</flux:link>
         </p>
     </div>
 </x-layouts.app>

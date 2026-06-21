@@ -7,31 +7,32 @@
         </p>
 
         @if (session('status'))
-            <div class="mt-4 rounded-xl bg-garden-100 px-4 py-3 text-base text-garden-800">
-                {{ session('status') }}
-            </div>
+            <flux:callout variant="success" icon="check-circle" class="mt-4">
+                <flux:callout.text>{{ session('status') }}</flux:callout.text>
+            </flux:callout>
         @endif
 
         <form method="POST" action="{{ route('password.email') }}" class="mt-6 space-y-5">
             @csrf
-            <div>
-                <label for="email" class="block text-base font-semibold text-garden-800">Email</label>
-                <input type="email" id="email" name="email" required value="{{ old('email') }}"
-                    placeholder="you@example.com" autocomplete="email" inputmode="email"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                @error('email') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
-            </div>
+            <flux:field>
+                <flux:label>Email</flux:label>
+                <flux:input type="email" name="email" required :value="old('email')"
+                    placeholder="you@example.com" autocomplete="email" inputmode="email" />
+                <flux:error name="email" />
+            </flux:field>
 
             <x-turnstile />
 
-            <button type="submit" data-turnstile-gate disabled
-                class="w-full rounded-xl bg-garden-700 px-6 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 disabled:cursor-not-allowed disabled:opacity-60">
+            {{-- Disabled until Turnstile is ready; data-turnstile-gate is the toggle hook. --}}
+            <flux:button type="submit" variant="primary" class="w-full" disabled data-turnstile-gate>
                 Email me a reset link
-            </button>
+            </flux:button>
         </form>
 
-        <p class="mt-6 text-center text-base text-soil-700/80">
-            <a href="{{ route('login') }}" class="font-semibold text-garden-700 hover:underline">Back to sign in</a>
+        <flux:separator class="my-7" />
+
+        <p class="text-center text-base text-soil-700/80">
+            <flux:link href="{{ route('login') }}" class="font-semibold">Back to sign in</flux:link>
         </p>
     </div>
 </x-layouts.app>

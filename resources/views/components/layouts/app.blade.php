@@ -87,7 +87,7 @@
                     </flux:dropdown>
 
                     {{-- Hidden POST form the Sign out menu item submits (keeps CSRF). --}}
-                    <form id="logout-form" method="POST" action="{{ route('auth.logout') }}" class="hidden">
+                    <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                         @csrf
                     </form>
                 @else
