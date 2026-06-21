@@ -25,9 +25,14 @@ class UploadForm extends Component
 
     public string $transcript = '';
 
-    public function setMode(string $mode): void
+    /**
+     * The intake tabs bind straight to $mode via wire:model. Whenever it
+     * changes we clear any stale validation errors and keep the value to the
+     * three known modes (the tab names are controlled, but stay defensive).
+     */
+    public function updatedMode(): void
     {
-        $this->mode = in_array($mode, ['record', 'audio', 'paste'], true) ? $mode : 'record';
+        $this->mode = in_array($this->mode, ['record', 'audio', 'paste'], true) ? $this->mode : 'record';
         $this->resetErrorBag();
     }
 
@@ -90,6 +95,6 @@ class UploadForm extends Component
     public function render()
     {
         return view('livewire.upload-form')
-            ->layout('components.layouts.app', ['title' => config('app.name')]);
+            ->layout('components.layouts.app', ['title' => config('app.name'), 'appShell' => true]);
     }
 }

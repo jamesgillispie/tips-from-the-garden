@@ -9,148 +9,134 @@
 @endphp
 
 <div class="space-y-8">
-    <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-            <h1 class="font-serif text-3xl font-semibold text-garden-800">My garden desk</h1>
-            <p class="mt-1 truncate text-base text-soil-700/70">{{ auth()->user()->email }}</p>
-        </div>
-        <form method="POST" action="{{ route('auth.logout') }}" class="shrink-0">
-            @csrf
-            <button type="submit" class="text-base font-medium text-soil-700/70 hover:underline">Sign out</button>
-        </form>
+    <div class="min-w-0">
+        <h1 class="font-serif text-3xl font-semibold text-garden-800">My garden desk</h1>
+        <p class="mt-1 truncate text-base text-zinc-500">{{ auth()->user()->email }}</p>
     </div>
-
-    @if (session('desk-flash'))
-        <div class="rounded-xl bg-garden-100 px-4 py-3 text-base text-garden-800">
-            {{ session('desk-flash') }}
-        </div>
-    @endif
 
     {{-- Tabs --}}
-    <div class="grid grid-cols-3 gap-2 rounded-xl bg-garden-50 p-2" role="tablist" aria-label="Your garden desk">
-        @foreach (['articles' => 'Journal', 'recordings' => 'Recordings', 'voice' => 'My Voice'] as $key => $label)
-            @php
-                $count = match ($key) {
-                    'articles' => $articles->count(),
-                    'recordings' => $memos->count(),
-                    'voice' => $samples->count(),
-                };
-            @endphp
-            <button type="button" wire:click="setTab('{{ $key }}')" role="tab"
-                aria-selected="{{ $tab === $key ? 'true' : 'false' }}"
-                class="rounded-lg px-3 py-3 text-base font-semibold transition
-                    {{ $tab === $key ? 'bg-white text-garden-800 shadow' : 'text-soil-700/80 hover:bg-white/60' }}">
-                {{ $label }}@if ($count) <span class="text-sm font-normal text-soil-700/50">({{ $count }})</span>@endif
-            </button>
-        @endforeach
-    </div>
+    <flux:tabs wire:model.live="tab" variant="segmented" scrollable class="w-full">
+        <flux:tab name="articles">Journal{!! $articles->isNotEmpty() ? ' <span class="hidden font-normal text-zinc-400 sm:inline">('.$articles->count().')</span>' : '' !!}</flux:tab>
+        <flux:tab name="recordings">Recordings{!! $memos->isNotEmpty() ? ' <span class="hidden font-normal text-zinc-400 sm:inline">('.$memos->count().')</span>' : '' !!}</flux:tab>
+        <flux:tab name="voice">My Voice{!! $samples->isNotEmpty() ? ' <span class="hidden font-normal text-zinc-400 sm:inline">('.$samples->count().')</span>' : '' !!}</flux:tab>
+    </flux:tabs>
 
     {{-- ─────────────────────────  JOURNAL  ───────────────────────── --}}
     @if ($tab === 'articles')
         <section wire:key="tab-articles" class="space-y-4">
             {{-- Search across the title and full text of every journal entry. --}}
-            <div class="relative">
-                <input type="text" wire:model.live.debounce.300ms="search"
-                    placeholder="Search your journal entries…" aria-label="Search your journal entries"
-                    autocomplete="off" class="block w-full rounded-xl border-2 border-garden-100 px-4 py-3 pr-10 text-base">
-                @if ($search !== '')
-                    <button type="button" wire:click="$set('search', '')" aria-label="Clear search"
-                        class="absolute inset-y-0 right-3 flex items-center text-soil-700/50 hover:text-soil-700">✕</button>
-                @endif
-            </div>
+            <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" clearable
+                placeholder="Search your journal entries…" aria-label="Search your journal entries" autocomplete="off" />
 
             @if ($articles->isEmpty())
                 @if ($search !== '')
-                    <p class="rounded-xl border border-dashed border-garden-100 bg-white p-6 text-base text-soil-700/70">
-                        No journal entries match “{{ $search }}”.
-                        <button type="button" wire:click="$set('search', '')" class="font-medium text-garden-700 underline">Clear search</button>
-                    </p>
+                    <flux:callout icon="magnifying-glass">
+                        <flux:callout.text>
+                            No journal entries match “{{ $search }}”.
+                            <flux:callout.link href="#" wire:click.prevent="$set('search', '')">Clear search</flux:callout.link>
+                        </flux:callout.text>
+                    </flux:callout>
                 @else
-                    <p class="rounded-xl border border-dashed border-garden-100 bg-white p-6 text-base text-soil-700/70">
-                        No journal entries yet. <a href="{{ route('home') }}" class="font-medium text-garden-700 underline">Record your first memo</a>
-                        and your finished journal entry will show up here.
-                    </p>
+                    <flux:callout icon="pencil-square">
+                        <flux:callout.text>
+                            No journal entries yet.
+                            <flux:callout.link href="{{ route('home') }}">Record your first memo</flux:callout.link>
+                            and your finished journal entry will show up here.
+                        </flux:callout.text>
+                    </flux:callout>
                 @endif
             @else
-                <ul class="divide-y divide-garden-100 rounded-xl border border-garden-100 bg-white">
-                    @foreach ($articles as $article)
-                        <li class="flex items-center justify-between gap-4 px-4 py-4">
-                            <div class="min-w-0">
-                                <a href="{{ $article->publicUrl() }}" class="text-lg font-medium text-garden-800 hover:underline">
-                                    {{ $article->title }}
-                                </a>
-                                <p class="text-sm text-soil-700/60">{{ $article->created_at->format('F j, Y') }}</p>
-                            </div>
-                            <div class="flex shrink-0 items-center gap-3 text-sm">
-                                <a class="font-medium text-garden-700 underline"
-                                    href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}">PDF</a>
-                                <a class="font-medium text-garden-700 underline"
-                                    href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}">Text</a>
-                                <button type="button" wire:click="deleteArticle({{ $article->id }})"
-                                    wire:confirm="Delete this journal entry? Your original recording stays in Recordings. This can't be undone."
-                                    class="font-medium text-red-600 underline">Delete</button>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
+                <flux:card class="!p-0">
+                    <ul class="divide-y divide-zinc-100">
+                        @foreach ($articles as $article)
+                            <li class="flex items-center justify-between gap-4 px-4 py-4">
+                                <div class="min-w-0">
+                                    <a href="{{ $article->publicUrl() }}" class="text-lg font-medium text-garden-800 hover:underline">
+                                        {{ $article->title }}
+                                    </a>
+                                    <p class="text-sm text-zinc-400">{{ $article->created_at->format('F j, Y') }}</p>
+                                </div>
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" inset="top bottom" aria-label="Entry actions" />
+                                    <flux:menu>
+                                        <flux:menu.item icon="arrow-down-tray"
+                                            href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}">
+                                            Download PDF
+                                        </flux:menu.item>
+                                        <flux:menu.item icon="document-text"
+                                            href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}">
+                                            Download as text
+                                        </flux:menu.item>
+                                        <flux:menu.separator />
+                                        <flux:menu.item variant="danger" icon="trash" wire:click="confirmDelete('article', {{ $article->id }})">
+                                            Delete
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
+                            </li>
+                        @endforeach
+                    </ul>
+                </flux:card>
             @endif
         </section>
 
     {{-- ────────────────────────  RECORDINGS  ───────────────────────── --}}
     @elseif ($tab === 'recordings')
         <section wire:key="tab-recordings" class="space-y-3">
-            <p class="text-base text-soil-700/70">
+            <flux:text>
                 Every memo you've sent — recorded here, uploaded, typed, or emailed in —
                 kept as a transcript you can read and download.
-            </p>
+            </flux:text>
 
             @if ($memos->isEmpty())
-                <p class="rounded-xl border border-dashed border-garden-100 bg-white p-6 text-base text-soil-700/70">
-                    Nothing here yet. <a href="{{ route('home') }}" class="font-medium text-garden-700 underline">Send your first memo</a>
-                    and it'll be saved here.
-                </p>
+                <flux:callout icon="microphone">
+                    <flux:callout.text>
+                        Nothing here yet.
+                        <flux:callout.link href="{{ route('home') }}">Send your first memo</flux:callout.link>
+                        and it'll be saved here.
+                    </flux:callout.text>
+                </flux:callout>
             @else
                 <ul class="space-y-3">
                     @foreach ($memos as $memo)
-                        <li class="rounded-xl border border-garden-100 bg-white p-4">
+                        <li wire:key="memo-{{ $memo->id }}">
+                        <flux:card>
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
                                     <p class="text-base font-semibold text-garden-800">
                                         {{ $sourceLabels[$memo->source] ?? '🌱 Memo' }}
                                     </p>
-                                    <p class="text-sm text-soil-700/60">{{ $memo->created_at->format('F j, Y · g:i a') }}</p>
+                                    <p class="text-sm text-zinc-400">{{ $memo->created_at->format('F j, Y · g:i a') }}</p>
                                 </div>
                                 @php
-                                    $pill = match (true) {
-                                        $memo->isReady() => 'bg-garden-100 text-garden-800',
-                                        $memo->isFailed() => 'bg-red-50 text-red-700',
-                                        default => 'bg-amber-50 text-amber-800',
+                                    $statusColor = match (true) {
+                                        $memo->isReady() => 'green',
+                                        $memo->isFailed() => 'red',
+                                        default => 'amber',
                                     };
                                 @endphp
-                                <span class="shrink-0 rounded-full px-3 py-1 text-sm font-medium {{ $pill }}">
-                                    {{ $memo->statusLabel() }}
-                                </span>
+                                <flux:badge :color="$statusColor" class="shrink-0">{{ $memo->statusLabel() }}</flux:badge>
                             </div>
 
                             @if ($memo->transcript)
-                                <p class="mt-3 text-base text-soil-700/80">
+                                <flux:text class="mt-3">
                                     {{ \Illuminate\Support\Str::limit($memo->transcript->raw_text, 200) }}
-                                </p>
+                                </flux:text>
                             @endif
 
-                            <div class="mt-3 flex flex-wrap items-center gap-4 text-sm">
+                            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                                 @if ($memo->isReady() && $memo->article)
-                                    <a href="{{ $memo->article->publicUrl() }}" class="font-medium text-garden-700 underline">Read the journal entry</a>
+                                    <flux:link href="{{ $memo->article->publicUrl() }}">Read the journal entry</flux:link>
                                 @elseif (! $memo->isReady() && ! $memo->isFailed())
-                                    <a href="{{ route('submissions.status', ['submission' => $memo->uuid]) }}" class="font-medium text-garden-700 underline">Watch progress</a>
+                                    <flux:link href="{{ route('submissions.status', ['submission' => $memo->uuid]) }}">Watch progress</flux:link>
                                 @endif
                                 @if ($memo->transcript)
-                                    <a href="{{ route('memos.transcript', ['submission' => $memo->uuid]) }}" class="font-medium text-garden-700 underline">Download transcript (.md)</a>
+                                    <flux:link href="{{ route('memos.transcript', ['submission' => $memo->uuid]) }}">Download transcript (.md)</flux:link>
                                 @endif
-                                <button type="button" wire:click="deleteMemo({{ $memo->id }})"
-                                    wire:confirm="Delete this recording? Its journal entry and transcript go too. This can't be undone."
-                                    class="font-medium text-red-600 underline">Delete</button>
+                                <button type="button" wire:click="confirmDelete('memo', {{ $memo->id }})"
+                                    class="font-medium text-red-600 hover:underline">Delete</button>
                             </div>
+                        </flux:card>
                         </li>
                     @endforeach
                 </ul>
@@ -160,65 +146,80 @@
     {{-- ─────────────────────────  MY VOICE  ────────────────────────── --}}
     @else
         <section wire:key="tab-voice" class="space-y-4">
-            <p class="text-base text-soil-700/70">
+            <flux:text>
                 Paste samples of your own writing — blog posts, newsletters, garden journal
                 entries. The more we have, the more your journal entries sound like you.
                 Memos you send become samples automatically.
-            </p>
+            </flux:text>
 
             @if ($profileText)
-                <div class="rounded-xl border border-garden-100 bg-garden-50 p-4">
-                    <p class="text-sm font-semibold uppercase tracking-wide text-garden-700">The voice we've learned</p>
-                    <p class="mt-2 text-base text-soil-700/80">{{ $profileText }}</p>
-                </div>
+                <flux:callout icon="sparkles">
+                    <flux:callout.heading>The voice we’ve learned</flux:callout.heading>
+                    <flux:callout.text>{{ $profileText }}</flux:callout.text>
+                </flux:callout>
             @endif
 
-            @if (session('sample-added'))
-                <div class="rounded-xl bg-garden-100 px-4 py-3 text-base text-garden-800">
-                    {{ session('sample-added') }}
-                </div>
-            @endif
-
-            <form wire:submit="addSample" class="space-y-3 rounded-xl border border-garden-100 bg-white p-4">
-                <input type="text" wire:model="sampleTitle" placeholder="Title (optional)"
-                    class="block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                <textarea wire:model="sampleBody" rows="6"
-                    placeholder="Paste a piece of your writing here…"
-                    class="block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base"></textarea>
-                @error('sampleBody') <p class="text-base font-medium text-red-600">{{ $message }}</p> @enderror
-                <button type="submit"
-                    class="rounded-xl bg-garden-700 px-5 py-3 text-base font-semibold text-white shadow transition hover:bg-garden-800">
-                    Add writing sample
-                </button>
-            </form>
+            <flux:card>
+                <form wire:submit="addSample" class="space-y-4">
+                    <flux:input wire:model="sampleTitle" placeholder="Title (optional)" />
+                    <flux:textarea wire:model="sampleBody" rows="6" placeholder="Paste a piece of your writing here…" />
+                    <flux:error name="sampleBody" />
+                    <flux:button type="submit" variant="primary" icon="plus">Add writing sample</flux:button>
+                </form>
+            </flux:card>
 
             @if ($samples->isNotEmpty())
-                <ul class="divide-y divide-garden-100 rounded-xl border border-garden-100 bg-white">
-                    @foreach ($samples as $sample)
-                        <li class="flex items-center justify-between gap-4 px-4 py-4 text-base">
-                            <div class="min-w-0">
-                                <p class="truncate font-medium {{ $sample->include_in_profile ? '' : 'text-soil-700/50' }}">
-                                    {{ $sample->title ?? Str::limit($sample->body, 60) }}
-                                </p>
-                                <p class="text-sm text-soil-700/60">
-                                    {{ ucfirst($sample->source) }} · {{ $sample->created_at->format('M j, Y') }}
-                                    · {{ Str::wordCount($sample->body) }} words
-                                    @unless ($sample->include_in_profile) · not being used @endunless
-                                </p>
-                            </div>
-                            <div class="flex shrink-0 items-center gap-4 text-sm">
-                                <button wire:click="toggleSample({{ $sample->id }})" class="font-medium text-garden-700 underline">
-                                    {{ $sample->include_in_profile ? 'Stop using' : 'Use again' }}
-                                </button>
-                                <button wire:click="deleteSample({{ $sample->id }})"
-                                    wire:confirm="Delete this sample?" class="font-medium text-red-600 underline">
-                                    Delete
-                                </button>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
+                <flux:card class="!p-0">
+                    <ul class="divide-y divide-zinc-100">
+                        @foreach ($samples as $sample)
+                            <li class="flex items-center justify-between gap-4 px-4 py-4 text-base">
+                                <div class="min-w-0">
+                                    <p class="truncate font-medium {{ $sample->include_in_profile ? 'text-garden-800' : 'text-zinc-400' }}">
+                                        {{ $sample->title ?? Str::limit($sample->body, 60) }}
+                                    </p>
+                                    <p class="text-sm text-zinc-400">
+                                        {{ ucfirst($sample->source) }} · {{ $sample->created_at->format('M j, Y') }}
+                                        · {{ Str::wordCount($sample->body) }} words
+                                        @unless ($sample->include_in_profile) · not being used @endunless
+                                    </p>
+                                </div>
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" inset="top bottom" aria-label="Sample actions" />
+                                    <flux:menu>
+                                        <flux:menu.item icon="{{ $sample->include_in_profile ? 'eye-slash' : 'eye' }}"
+                                            wire:click="toggleSample({{ $sample->id }})">
+                                            {{ $sample->include_in_profile ? 'Stop using' : 'Use again' }}
+                                        </flux:menu.item>
+                                        <flux:menu.separator />
+                                        <flux:menu.item variant="danger" icon="trash" wire:click="confirmDelete('sample', {{ $sample->id }})">
+                                            Delete
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
+                            </li>
+                        @endforeach
+                    </ul>
+                </flux:card>
             @endif
         </section>
     @endif
+
+    {{-- Shared confirm-delete dialog (driven by $pendingDelete + performDelete). --}}
+    <flux:modal name="confirm-delete" class="w-full sm:min-w-[22rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">{{ $pendingDelete['heading'] ?? 'Delete this?' }}</flux:heading>
+                <flux:text class="mt-2">{{ $pendingDelete['body'] ?? 'This can’t be undone.' }}</flux:text>
+            </div>
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button variant="danger" icon="trash" wire:click="performDelete">
+                    {{ $pendingDelete['confirm'] ?? 'Delete' }}
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </div>

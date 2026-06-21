@@ -1,16 +1,29 @@
 @import "tailwindcss";
+@import "../../vendor/livewire/flux/dist/flux.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source "../views";
 @source "../../app/Livewire";
 
 @theme {
+    /* Inter powers the neutral "app" screens; the serif stays the brand voice
+       for headings and the article reading surface. */
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-serif: "Iowan Old Style", "Palatino", Georgia, serif;
+
     --color-garden-50: #f4f7f0;
     --color-garden-100: #e4ecdb;
     --color-garden-600: #4a6b3a;
     --color-garden-700: #3a5530;
     --color-garden-800: #2d4226;
     --color-soil-700: #4e3d30;
+
+    /* Flux's accent → garden green, so every Flux primary button, active tab,
+       link and focus ring reads as part of the brand instead of generic blue. */
+    --color-accent: #3a5530;
+    --color-accent-content: #2d4226;
+    --color-accent-foreground: #ffffff;
 }
 
 @layer base {

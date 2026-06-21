@@ -3,11 +3,6 @@
         <h1 class="font-serif text-4xl font-semibold text-garden-800 sm:text-5xl">
             Talk to your garden.<br>We'll write it down.
         </h1>
-        <!--p class="mx-auto mt-5 max-w-xl lg:text-lg text-soil-700/80">
-            Sign in with just your email — no password to remember — then record a
-            voice memo from your garden. We'll turn it into a polished journal entry in
-            your own voice and email it right back to you.
-        </p-->
     </div>
 
     <div class="mx-auto max-w-md rounded-2xl border border-garden-100 bg-white p-6 shadow-sm sm:p-8">
@@ -18,9 +13,9 @@
         </p>
 
         @if (session('status'))
-            <div class="mt-4 rounded-xl bg-garden-100 px-4 py-3 text-base text-garden-800">
-                {{ session('status') }}
-            </div>
+            <flux:callout variant="success" icon="check-circle" class="mt-4">
+                <flux:callout.text>{{ session('status') }}</flux:callout.text>
+            </flux:callout>
         @endif
 
         @if (session('devLoginUrl'))
@@ -32,13 +27,12 @@
 
         <form method="POST" action="{{ route('auth.magic.send') }}" class="mt-6 space-y-5">
             @csrf
-            <div>
-                <label for="email" class="block text-base font-semibold text-garden-800">Your email</label>
-                <input type="email" id="email" name="email" required value="{{ old('email') }}"
-                    placeholder="you@example.com" autocomplete="email" inputmode="email"
-                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
-                @error('email') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
-            </div>
+            <flux:field>
+                <flux:label>Your email</flux:label>
+                <flux:input type="email" id="email" name="email" required :value="old('email')"
+                    placeholder="you@example.com" autocomplete="email" inputmode="email" />
+                <flux:error name="email" />
+            </flux:field>
 
             {{-- Cloudflare Turnstile — a quiet "are you human?" check. The submit
                  button stays disabled until the widget hands us a fresh token, and
@@ -55,10 +49,9 @@
                 @error('turnstile') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
             </div>
 
-            <button type="submit" id="signin-submit" disabled
-                class="w-full rounded-xl bg-garden-700 px-6 py-4 text-lg font-semibold text-white shadow transition hover:bg-garden-800 disabled:cursor-not-allowed disabled:opacity-60">
+            <flux:button type="submit" id="signin-submit" variant="primary" class="w-full" disabled>
                 Email me a sign-in link
-            </button>
+            </flux:button>
         </form>
     </div>
 

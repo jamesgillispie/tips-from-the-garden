@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\WritingSample;
 use App\Support\MagicLink;
+use Flux\Flux;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -21,6 +22,14 @@ class Dashboard extends Component
 
     public string $sampleBody = '';
 
+    /**
+     * The item a confirm-delete modal is currently asking about:
+     * ['kind' => 'article'|'memo'|'sample', 'id' => int, 'heading', 'body', 'confirm'].
+     * Null when no modal is open. The actual mutators below still take an id and
+     * work when called directly (the modal is just a friendlier front door).
+     */
+    public ?array $pendingDelete = null;
+
     public function mount(): void
     {
         $this->tab = in_array($this->tab, MagicLink::TABS, true) ? $this->tab : 'articles';
@@ -29,6 +38,60 @@ class Dashboard extends Component
     public function setTab(string $tab): void
     {
         $this->tab = in_array($tab, MagicLink::TABS, true) ? $tab : 'articles';
+    }
+
+    /**
+     * Open the shared confirm-delete modal for a given item. The destructive
+     * work itself stays in the dedicated mutators below, so direct calls (and
+     * tests) keep working without going through the modal.
+     */
+    public function confirmDelete(string $kind, int $id): void
+    {
+        $this->pendingDelete = match ($kind) {
+            'article' => [
+                'kind' => 'article', 'id' => $id,
+                'heading' => 'Delete this journal entry?',
+                'body' => 'Your original recording stays in Recordings. This can’t be undone.',
+                'confirm' => 'Delete entry',
+            ],
+            'memo' => [
+                'kind' => 'memo', 'id' => $id,
+                'heading' => 'Delete this recording?',
+                'body' => 'Its journal entry and transcript go too. This can’t be undone.',
+                'confirm' => 'Delete recording',
+            ],
+            'sample' => [
+                'kind' => 'sample', 'id' => $id,
+                'heading' => 'Delete this writing sample?',
+                'body' => 'It will no longer shape how your journal entries sound. This can’t be undone.',
+                'confirm' => 'Delete sample',
+            ],
+            default => null,
+        };
+
+        if ($this->pendingDelete) {
+            Flux::modal('confirm-delete')->show();
+        }
+    }
+
+    /** Carry out the deletion the confirm-delete modal is asking about. */
+    public function performDelete(): void
+    {
+        $pending = $this->pendingDelete;
+
+        if (! $pending) {
+            return;
+        }
+
+        match ($pending['kind']) {
+            'article' => $this->deleteArticle($pending['id']),
+            'memo' => $this->deleteMemo($pending['id']),
+            'sample' => $this->deleteSample($pending['id']),
+            default => null,
+        };
+
+        $this->pendingDelete = null;
+        Flux::modal('confirm-delete')->close();
     }
 
     public function addSample(): void
@@ -49,7 +112,7 @@ class Dashboard extends Component
 
         $this->reset('sampleTitle', 'sampleBody');
 
-        session()->flash('sample-added', 'Sample saved — future journal entries will learn from it.');
+        Flux::toast(text: 'Sample saved — future journal entries will learn from it.', variant: 'success');
     }
 
     public function toggleSample(int $sampleId): void
@@ -57,11 +120,17 @@ class Dashboard extends Component
         $sample = auth()->user()->writingSamples()->findOrFail($sampleId);
 
         $sample->update(['include_in_profile' => ! $sample->include_in_profile]);
+
+        Flux::toast(text: $sample->include_in_profile
+            ? 'Now shaping your voice again.'
+            : 'Set aside — it won’t shape your voice.');
     }
 
     public function deleteSample(int $sampleId): void
     {
         auth()->user()->writingSamples()->findOrFail($sampleId)->delete();
+
+        Flux::toast(text: 'Writing sample deleted.', variant: 'success');
     }
 
     /**
@@ -72,7 +141,7 @@ class Dashboard extends Component
     {
         auth()->user()->articles()->findOrFail($articleId)->delete();
 
-        session()->flash('desk-flash', 'Journal entry deleted.');
+        Flux::toast(text: 'Journal entry deleted.', variant: 'success');
     }
 
     /**
@@ -88,7 +157,7 @@ class Dashboard extends Component
         $submission->article?->delete();
         $submission->delete();
 
-        session()->flash('desk-flash', 'Recording deleted.');
+        Flux::toast(text: 'Recording deleted.', variant: 'success');
     }
 
     public function render()
@@ -111,6 +180,6 @@ class Dashboard extends Component
             'samples' => $user->writingSamples()->latest()->get(),
             'memos' => $user->submissions()->with(['transcript', 'article'])->latest()->get(),
             'profileText' => $user->voiceProfile?->profile_text,
-        ])->layout('components.layouts.app', ['title' => 'My garden desk — '.config('app.name')]);
+        ])->layout('components.layouts.app', ['title' => 'My garden desk — '.config('app.name'), 'appShell' => true]);
     }
 }

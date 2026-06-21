@@ -17,18 +17,18 @@
         </div>
 
         <footer class="mt-10 flex flex-wrap items-center gap-3 border-t border-garden-100 pt-6">
-            <a href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}"
-                class="rounded-xl bg-garden-700 px-5 py-3 text-base font-semibold text-white shadow transition hover:bg-garden-800 active:scale-[.98]">
+            <flux:button href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}"
+                variant="primary" icon="arrow-down-tray">
                 Download PDF
-            </a>
-            <a href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}"
-                class="rounded-xl border-2 border-garden-100 px-5 py-3 text-base font-semibold text-garden-700 transition hover:bg-garden-50 active:scale-[.98]">
+            </flux:button>
+            <flux:button href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'md']) }}"
+                icon="document-text">
                 Download as text
-            </a>
+            </flux:button>
             @guest
                 <span class="ml-auto text-sm text-soil-700/70">
                     Want it to sound even more like you?
-                    <a href="{{ route('dashboard') }}" class="font-medium text-garden-700 underline">Sign in and add writing samples</a>
+                    <flux:link href="{{ route('dashboard') }}" class="font-medium">Sign in and add writing samples</flux:link>
                 </span>
             @endguest
         </footer>
