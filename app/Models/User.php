@@ -15,12 +15,21 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'password',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 
     public function voiceProfile(): HasOne
     {
@@ -43,7 +52,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Find or create a user from an email address (the only identity we need).
+     * Find or create a user from an email address. Registration adds a password
+     * on top; the email and webhook intake doors leave it null until the
+     * gardener claims the account with a password-reset link.
      */
     public static function fromEmail(string $email, ?string $name = null): self
     {

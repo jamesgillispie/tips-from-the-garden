@@ -5,8 +5,8 @@ namespace App\Support;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Verifies a Cloudflare Turnstile token server-side. Guards the sign-in form
- * so a bot can't fire off magic-link emails in bulk.
+ * Verifies a Cloudflare Turnstile token server-side. Guards the public auth
+ * forms (sign in, register, reset request) so bots can't spray them.
  */
 class Turnstile
 {

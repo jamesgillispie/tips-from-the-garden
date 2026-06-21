@@ -8,7 +8,7 @@ use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -59,17 +59,21 @@ class GardenDeskTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_a_tab_aware_magic_link_lands_on_the_recordings_tab(): void
+    public function test_a_guest_deep_linking_to_a_tab_is_returned_there_after_login(): void
     {
         $user = User::fromEmail('rose@example.test');
+        $user->forceFill(['password' => Hash::make('open-sesame-9')])->save();
 
-        $url = URL::temporarySignedRoute(
-            'auth.magic.login',
-            now()->addMinutes(30),
-            ['user' => $user->id, 'tab' => 'recordings'],
-        );
+        // The login wall remembers where the guest was headed…
+        $this->get(route('dashboard', ['tab' => 'recordings']))->assertRedirect(route('login'));
 
-        $this->get($url)->assertRedirect(route('dashboard', ['tab' => 'recordings']));
+        // …and signing in returns them to that exact tab — no bespoke deep-link
+        // params needed now that it rides Laravel's "intended URL".
+        $this->post(route('login'), [
+            'email' => 'rose@example.test',
+            'password' => 'open-sesame-9',
+        ])->assertRedirect(route('dashboard', ['tab' => 'recordings']));
+
         $this->assertAuthenticatedAs($user);
     }
 

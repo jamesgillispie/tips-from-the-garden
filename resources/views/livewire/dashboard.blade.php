@@ -9,9 +9,15 @@
 @endphp
 
 <div class="space-y-8">
-    <div class="min-w-0">
-        <h1 class="font-serif text-3xl font-semibold text-garden-800">My garden desk</h1>
-        <p class="mt-1 truncate text-base text-zinc-500">{{ auth()->user()->email }}</p>
+    <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+            <h1 class="font-serif text-3xl font-semibold text-garden-800">My garden desk</h1>
+            <p class="mt-1 truncate text-base text-zinc-500">{{ auth()->user()->email }}</p>
+        </div>
+        <form method="POST" action="{{ route('logout') }}" class="shrink-0">
+            @csrf
+            <button type="submit" class="text-base font-medium text-soil-700/70 hover:underline">Sign out</button>
+        </form>
     </div>
 
     {{-- Tabs --}}

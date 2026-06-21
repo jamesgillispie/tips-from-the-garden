@@ -1,4 +1,4 @@
-<x-layouts.app :title="config('app.name')">
+<x-layouts.app :title="'Sign in — '.config('app.name')">
     <div class="mb-10 text-center">
         <h1 class="font-serif text-4xl font-semibold text-garden-800 sm:text-5xl">
             Talk to your garden.<br>We'll write it down.
@@ -6,10 +6,9 @@
     </div>
 
     <div class="mx-auto max-w-md rounded-2xl border border-garden-100 bg-white p-6 shadow-sm sm:p-8">
-        <h2 class="font-serif text-2xl font-semibold text-garden-800">Sign in to get started</h2>
+        <h2 class="font-serif text-2xl font-semibold text-garden-800">Welcome back</h2>
         <p class="mt-2 text-base text-soil-700/80">
-            Enter your email and we'll send a one-click sign-in link. New here? This
-            sets up your garden desk automatically.
+            Sign in to record a memo and pick up your journal entries.
         </p>
 
         @if (session('status'))
@@ -18,14 +17,7 @@
             </flux:callout>
         @endif
 
-        @if (session('devLoginUrl'))
-            <a href="{{ session('devLoginUrl') }}"
-                class="mt-4 block rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center text-base font-semibold text-amber-800 hover:bg-amber-100">
-                🔧 Local dev — sign in now
-            </a>
-        @endif
-
-        <form method="POST" action="{{ route('auth.magic.send') }}" class="mt-6 space-y-5">
+        <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-5">
             @csrf
             <flux:field>
                 <flux:label>Your email</flux:label>
@@ -34,38 +26,32 @@
                 <flux:error name="email" />
             </flux:field>
 
-            {{-- Cloudflare Turnstile — a quiet "are you human?" check. The submit
-                 button stays disabled until the widget hands us a fresh token, and
-                 re-disables if that token expires or errors, so we never POST a
-                 stale/expired token (which Turnstile rejects as duplicate). --}}
             <div>
-                <div class="cf-turnstile"
-                    data-sitekey="{{ config('services.turnstile.site_key') }}"
-                    data-theme="light"
-                    data-callback="tftgTurnstileReady"
-                    data-expired-callback="tftgTurnstileStale"
-                    data-error-callback="tftgTurnstileStale"
-                    data-refresh-expired="auto"></div>
-                @error('turnstile') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
+                <div class="flex items-baseline justify-between">
+                    <label for="password" class="block text-base font-semibold text-garden-800">Password</label>
+                    <a href="{{ route('password.request') }}" class="text-sm font-medium text-garden-700 hover:underline">Forgot?</a>
+                </div>
+                <input type="password" id="password" name="password" required autocomplete="current-password"
+                    class="mt-2 block w-full rounded-xl border-2 border-garden-100 px-4 py-3 text-base">
+                @error('password') <p class="mt-2 text-base font-medium text-red-600">{{ $message }}</p> @enderror
             </div>
 
-            <flux:button type="submit" id="signin-submit" variant="primary" class="w-full" disabled>
-                Email me a sign-in link
+            <label class="flex items-center gap-2 text-base text-soil-700">
+                <input type="checkbox" name="remember" value="1"
+                    class="h-4 w-4 rounded border-garden-200 text-garden-700 focus:ring-garden-600">
+                Keep me signed in
+            </label>
+
+            <x-turnstile />
+
+            <flux:button type="submit" id="signin-submit" variant="primary" class="w-full" disabled data-turnstile-gate>
+                Sign in
             </flux:button>
         </form>
-    </div>
 
-    {{-- Gate the sign-in button on a fresh Turnstile token. Defined before the
-         async api.js so the callbacks exist when the widget invokes them. --}}
-    <script>
-        function tftgTurnstileReady() {
-            var b = document.getElementById('signin-submit');
-            if (b) b.disabled = false;
-        }
-        function tftgTurnstileStale() {
-            var b = document.getElementById('signin-submit');
-            if (b) b.disabled = true;
-        }
-    </script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        <p class="mt-6 text-center text-base text-soil-700/80">
+            New here?
+            <a href="{{ route('register') }}" class="font-semibold text-garden-700 hover:underline">Create an account</a>
+        </p>
+    </div>
 </x-layouts.app>

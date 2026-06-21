@@ -10,6 +10,9 @@ use Livewire\Component;
 
 class Dashboard extends Component
 {
+    /** The desk tabs a gardener can land on; anything else falls back to articles. */
+    public const TABS = ['articles', 'recordings', 'voice'];
+
     /** Which tab is showing: 'articles', 'recordings', or 'voice'. */
     #[Url]
     public string $tab = 'articles';
@@ -32,12 +35,12 @@ class Dashboard extends Component
 
     public function mount(): void
     {
-        $this->tab = in_array($this->tab, MagicLink::TABS, true) ? $this->tab : 'articles';
+        $this->tab = in_array($this->tab, self::TABS, true) ? $this->tab : 'articles';
     }
 
     public function setTab(string $tab): void
     {
-        $this->tab = in_array($tab, MagicLink::TABS, true) ? $tab : 'articles';
+        $this->tab = in_array($tab, self::TABS, true) ? $tab : 'articles';
     }
 
     /**
