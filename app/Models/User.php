@@ -14,6 +14,8 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'region',
+        'birth_year',
         'email',
         'password',
     ];
@@ -28,6 +30,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'birth_year' => 'integer',
         ];
     }
 
@@ -66,5 +69,15 @@ class User extends Authenticatable
         $user->voiceProfile()->firstOrCreate([]);
 
         return $user;
+    }
+
+    /**
+     * Look up an existing account by email — never creates one. The inbound
+     * email door uses this so a memo from an unknown (or spoofed) sender can't
+     * conjure a ghost account; it has to match an address that already signed up.
+     */
+    public static function findByEmail(string $email): ?self
+    {
+        return static::where('email', strtolower(trim($email)))->first();
     }
 }

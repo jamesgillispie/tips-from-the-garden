@@ -125,6 +125,30 @@ class GardenDeskTest extends TestCase
         $this->assertNotSoftDeleted('submissions', ['id' => $memo->id]);
     }
 
+    public function test_the_desk_advertises_the_configured_inbound_address(): void
+    {
+        config(['pipeline.inbound.address' => 'memos@manorhousegardens.org']);
+
+        $user = User::fromEmail('rose@example.test');
+
+        Livewire::actingAs($user)
+            ->test(Dashboard::class)
+            ->assertSee('memos@manorhousegardens.org');
+    }
+
+    public function test_the_desk_tells_gardeners_which_address_to_email_memos_from(): void
+    {
+        $user = User::fromEmail('rose@example.test');
+
+        Livewire::actingAs($user)
+            ->test(Dashboard::class)
+            // The identity guard: send from the address on this account, or the
+            // memo lands nowhere the gardener can see it.
+            ->assertSee('rose@example.test')
+            ->assertSee('the address on this account')
+            ->assertSee('Sign out');
+    }
+
     public function test_a_gardener_can_search_their_journal_entries_by_title_and_body(): void
     {
         $user = User::fromEmail('rose@example.test');

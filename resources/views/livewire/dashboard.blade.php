@@ -14,10 +14,12 @@
             <h1 class="font-serif text-3xl font-semibold text-garden-800">My garden desk</h1>
             <p class="mt-1 truncate text-base text-zinc-500">{{ auth()->user()->email }}</p>
         </div>
-        <form method="POST" action="{{ route('logout') }}" class="shrink-0">
-            @csrf
-            <button type="submit" class="text-base font-medium text-soil-700/70 hover:underline">Sign out</button>
-        </form>
+        {{-- The desk's primary action: straight to recording. Full-size and
+             primary so it's the obvious next tap from any tab. Sign out still
+             lives in the top-bar account menu. --}}
+        <flux:button href="{{ route('home') }}" variant="primary" icon="microphone" class="shrink-0">
+            Record a memo
+        </flux:button>
     </div>
 
     {{-- Tabs --}}
@@ -209,6 +211,35 @@
             @endif
         </section>
     @endif
+
+    {{-- The phone door — record on your phone's Voice Memos app and email the memo
+         in. Lives on the desk so it's one tap away from any tab, even when the
+         garden has no signal. --}}
+    <flux:card>
+        <flux:heading size="lg" class="font-serif text-garden-800">📱 Prefer your phone's Voice Memos app?</flux:heading>
+        <flux:text class="mt-2">
+            Record there, tap <strong>share</strong>, and email the memo to us.
+            Works even when the garden has no signal — record now, send when
+            you're back inside.
+        </flux:text>
+        <div class="mt-4 sm:max-w-md">
+            <x-email-copy />
+        </div>
+
+        {{-- Identity guard: a memo is filed by the address it's sent FROM, so it
+             has to come from the address on this account. Say so plainly, and
+             give a one-tap way to switch accounts if this isn't them. --}}
+        <flux:callout icon="information-circle" class="mt-4">
+            <flux:callout.text>
+                Send it from <strong>{{ auth()->user()->email }}</strong> — the address on this account.
+                A memo emailed from any other address won't reach your desk.
+                Not you?
+                <button type="button" x-on:click="document.getElementById('logout-form').submit()"
+                    class="font-semibold text-garden-700 underline">Sign out</button>
+                to switch accounts.
+            </flux:callout.text>
+        </flux:callout>
+    </flux:card>
 
     {{-- Shared confirm-delete dialog (driven by $pendingDelete + performDelete). --}}
     <flux:modal name="confirm-delete" class="w-full sm:min-w-[22rem]">

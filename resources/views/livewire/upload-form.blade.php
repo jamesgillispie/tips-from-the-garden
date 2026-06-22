@@ -1,20 +1,27 @@
-<div>
-    <div class="mb-6 text-center sm:mb-8">
-        <h1 class="font-serif text-3xl font-semibold text-garden-800 sm:text-4xl">
-            Talk to your garden
-        </h1>
+<div class="space-y-8">
+    <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+            <h1 class="font-serif text-3xl font-semibold text-garden-800">Talk to your garden</h1>
+            <p class="mt-1 text-base text-zinc-500">Record a memo and get a journal entry back in your own voice.</p>
+        </div>
+        <flux:button href="{{ route('dashboard') }}" variant="ghost" size="sm" icon="arrow-left"
+            aria-label="Back to desk" class="shrink-0">
+            <span class="hidden sm:inline">Back to desk</span>
+        </flux:button>
     </div>
 
-    <flux:card class="space-y-6 p-3">
-        {{-- Switch how you share — recording is the default and first tab. --}}
-        {{-- .live so selecting a tab commits $mode to the server, which swaps the
-             server-rendered panel below and fires updatedMode() to clear stale errors. --}}
-        <flux:tabs wire:model.live="mode" variant="segmented" scrollable class="w-full">
-            <flux:tab name="record" icon="microphone">Record</flux:tab>
-            <flux:tab name="audio" icon="arrow-up-tray">Upload</flux:tab>
-            <flux:tab name="paste" icon="pencil-square">Type</flux:tab>
-        </flux:tabs>
+    {{-- Switch how you share — recording is the default and first tab. The tabs
+         sit at the top level (just like the garden desk's tabs) so moving between
+         the desk and this screen feels like one continuous app, not two. --}}
+    {{-- .live so selecting a tab commits $mode to the server, which swaps the
+         server-rendered panel below and fires updatedMode() to clear stale errors. --}}
+    <flux:tabs wire:model.live="mode" variant="segmented" scrollable class="w-full">
+        <flux:tab name="record" icon="microphone">Record</flux:tab>
+        <flux:tab name="audio" icon="arrow-up-tray">Upload</flux:tab>
+        <flux:tab name="paste" icon="pencil-square">Type</flux:tab>
+    </flux:tabs>
 
+    <flux:card class="space-y-6">
         <form wire:submit="submit" class="space-y-7">
             @if ($mode === 'record')
                 <div wire:key="mode-record" x-data="voiceRecorder" aria-live="polite" class="text-center">
@@ -165,22 +172,5 @@
                 </div>
             @endif
         </form>
-    </flux:card>
-
-    {{-- The phone door --}}
-    <flux:card class="mt-8 sm:flex sm:items-center sm:justify-between sm:gap-6">
-        <div>
-            <flux:heading size="lg" class="font-serif text-garden-800">📱 Prefer your phone's Voice Memos app?</flux:heading>
-            <flux:text class="mt-2">
-                Record there, tap <strong>share</strong>, and email the memo to us.
-                Works even when the garden has no signal — record now, send when
-                you're back inside.
-            </flux:text>
-        </div>
-        {{-- email_off tells Cloudflare's Scrape Shield NOT to obfuscate this into
-             a "[email protected]" link — the gardener needs to read and copy it. --}}
-        <p class="mt-4 shrink-0 rounded-xl bg-garden-50 px-5 py-3 text-center text-lg font-semibold text-garden-700 select-all sm:mt-0">
-            <!--email_off-->{{ config('pipeline.inbound.address') ?: 'memos@'.(parse_url(config('app.url'), PHP_URL_HOST) ?? 'tipsfromthegarden.test') }}<!--/email_off-->
-        </p>
     </flux:card>
 </div>

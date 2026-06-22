@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Jobs\DeliverArticle;
 use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
+use App\Mail\NoAccountFound;
 use App\Mail\NoAudioFound;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
@@ -21,6 +23,10 @@ class InboundEmailTest extends TestCase
         Bus::fake();
         Mail::fake();
         Storage::fake(config('pipeline.audio.disk'));
+
+        // The email door only files memos for an address that already has an
+        // account — so the gardener has to exist before they can email one in.
+        User::fromEmail('gardener@example.test');
 
         $payload = [
             'FromFull' => ['Email' => 'gardener@example.test', 'Name' => 'Pat Gardener'],
@@ -45,6 +51,59 @@ class InboundEmailTest extends TestCase
             WriteArticle::class,
             DeliverArticle::class,
         ]);
+    }
+
+    public function test_inbound_email_from_an_unknown_address_creates_no_account(): void
+    {
+        Bus::fake();
+        Mail::fake();
+        Storage::fake(config('pipeline.audio.disk'));
+
+        $payload = [
+            'FromFull' => ['Email' => 'stranger@example.test', 'Name' => 'A Stranger'],
+            'Attachments' => [
+                [
+                    'Name' => 'memo.m4a',
+                    'ContentType' => 'audio/mp4',
+                    'Content' => base64_encode('not-really-audio'),
+                ],
+            ],
+        ];
+
+        $this->postJson(route('webhooks.postmark'), $payload)
+            ->assertOk()
+            ->assertJsonPath('status', 'no-account');
+
+        // No ghost account, no memo, no pipeline — just a nudge to sign up.
+        $this->assertDatabaseCount('submissions', 0);
+        $this->assertDatabaseMissing('users', ['email' => 'stranger@example.test']);
+        Bus::assertNothingDispatched();
+
+        Mail::assertQueued(NoAccountFound::class, fn ($mail) => $mail->hasTo('stranger@example.test'));
+    }
+
+    public function test_unknown_automated_sender_with_audio_gets_no_reply(): void
+    {
+        Mail::fake();
+        Storage::fake(config('pipeline.audio.disk'));
+
+        $payload = [
+            'FromFull' => ['Email' => 'mailer-daemon@example.test'],
+            'Attachments' => [
+                [
+                    'Name' => 'memo.m4a',
+                    'ContentType' => 'audio/mp4',
+                    'Content' => base64_encode('not-really-audio'),
+                ],
+            ],
+        ];
+
+        $this->postJson(route('webhooks.postmark'), $payload)
+            ->assertOk()
+            ->assertJsonPath('status', 'no-account');
+
+        // Never reply to an automated sender, even to say "make an account".
+        Mail::assertNotQueued(NoAccountFound::class);
     }
 
     public function test_inbound_email_without_audio_gets_a_helpful_reply(): void

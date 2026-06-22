@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../../vendor/livewire/flux/dist/flux.css";
+@import "vanilla-cookieconsent/dist/cookieconsent.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -75,4 +76,66 @@
     a:not([role="button"]):active {
         filter: brightness(0.9);
     }
+}
+
+/* ─────────────────────────  COOKIE CONSENT  ─────────────────────────
+   Repaint orestbida/cookieconsent in the garden palette so the banner and
+   preferences modal read as part of the brand, not a bolted-on widget. We
+   only remap the library's CSS variables — referencing the same design-system
+   tokens (--color-garden-*, --font-sans) the rest of the app uses, so the
+   banner moves in lockstep if those ever change. */
+#cc-main {
+    --cc-font-family: var(--font-sans);
+
+    --cc-bg: #ffffff;
+    --cc-primary-color: var(--color-soil-700);
+    --cc-secondary-color: color-mix(in oklab, var(--color-soil-700) 70%, white);
+
+    /* Primary action = the garden accent (matches Flux primary buttons). */
+    --cc-btn-primary-bg: var(--color-garden-700);
+    --cc-btn-primary-color: #ffffff;
+    --cc-btn-primary-border-color: var(--color-garden-700);
+    --cc-btn-primary-hover-bg: var(--color-garden-800);
+    --cc-btn-primary-hover-color: #ffffff;
+    --cc-btn-primary-hover-border-color: var(--color-garden-800);
+
+    /* Secondary = soft green tint, like the app's subtle surfaces. */
+    --cc-btn-secondary-bg: var(--color-garden-50);
+    --cc-btn-secondary-color: var(--color-garden-800);
+    --cc-btn-secondary-border-color: var(--color-garden-100);
+    --cc-btn-secondary-hover-bg: var(--color-garden-100);
+    --cc-btn-secondary-hover-color: var(--color-garden-800);
+    --cc-btn-secondary-hover-border-color: var(--color-garden-100);
+
+    --cc-link-color: var(--color-garden-700);
+
+    /* Toggles flip to garden green when a category is on. */
+    --cc-toggle-on-bg: var(--color-garden-600);
+    --cc-toggle-readonly-bg: var(--color-garden-100);
+    --cc-toggle-readonly-knob-bg: #ffffff;
+    --cc-toggle-readonly-knob-icon-color: var(--color-garden-700);
+
+    --cc-cookie-category-block-bg: var(--color-garden-50);
+    --cc-cookie-category-block-border: var(--color-garden-100);
+    --cc-cookie-category-block-hover-bg: var(--color-garden-100);
+    --cc-cookie-category-block-hover-border: var(--color-garden-100);
+    --cc-cookie-category-expanded-block-bg: var(--color-garden-100);
+
+    --cc-separator-border-color: var(--color-garden-100);
+    --cc-footer-bg: var(--color-garden-50);
+    --cc-footer-border-color: var(--color-garden-100);
+
+    /* Round the corners to match the app's cards and buttons. */
+    --cc-modal-border-radius: 1rem;
+    --cc-btn-border-radius: 0.5rem;
+    --cc-pm-toggle-border-radius: 0.5rem;
+
+    /* A warm soil-tinted scrim instead of flat black. */
+    --cc-overlay-bg: color-mix(in oklab, var(--color-soil-700) 45%, transparent);
+}
+
+/* Headings inside the consent UI take the brand serif, like the rest of the site. */
+#cc-main .cm__title,
+#cc-main .pm__title {
+    font-family: var(--font-serif);
 }

@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ConfirmEmailChangeController;
 use App\Http\Controllers\TranscriptController;
 use App\Http\Controllers\Webhooks\PostmarkInboundController;
+use App\Livewire\AccountSettings;
 use App\Livewire\Dashboard;
 use App\Livewire\SubmissionStatus;
 use App\Livewire\UploadForm;
@@ -42,6 +44,17 @@ Route::get('/dashboard', Dashboard::class)
 Route::get('/memos/{submission:uuid}/transcript', [TranscriptController::class, 'download'])
     ->middleware('auth')
     ->name('memos.transcript');
+
+// Account self-service: details, email, password, and the danger zone.
+Route::get('/account', AccountSettings::class)
+    ->middleware('auth')
+    ->name('account');
+
+// Confirm an email change from the new address. The signed link is the proof,
+// so no login is required — it works on whatever device opened the email.
+Route::get('/account/email/confirm/{user}/{hash}', ConfirmEmailChangeController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('account.email.confirm');
 
 // Inbound email webhook (CSRF-exempt via bootstrap/app.php).
 Route::post('/webhooks/postmark', PostmarkInboundController::class)->name('webhooks.postmark');

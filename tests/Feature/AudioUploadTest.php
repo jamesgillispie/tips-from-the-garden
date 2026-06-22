@@ -92,17 +92,6 @@ class AudioUploadTest extends TestCase
         $this->assertContains('weba', config('pipeline.audio.mimes'));
     }
 
-    public function test_the_record_page_advertises_the_configured_inbound_address(): void
-    {
-        config(['pipeline.inbound.address' => 'memos@manorhousegardens.org']);
-
-        $user = User::fromEmail('gardener@example.test');
-
-        Livewire::actingAs($user)
-            ->test(UploadForm::class)
-            ->assertSee('memos@manorhousegardens.org');
-    }
-
     /**
      * A minimal but genuinely valid 16kHz mono WAV, so the content-sniffing
      * `mimes` rule sees real audio.

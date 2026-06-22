@@ -70,11 +70,11 @@ class SubmissionService
 
     /**
      * Intake from the inbound email webhook (attachment arrives base64-encoded).
+     * The account is resolved by the controller — only an existing gardener can
+     * email a memo in, so this never creates a user.
      */
-    public function fromEmail(string $email, ?string $name, string $filename, string $base64Content): Submission
+    public function fromEmail(User $user, string $filename, string $base64Content): Submission
     {
-        $user = User::fromEmail($email, $name);
-
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION)) ?: 'm4a';
         $path = config('pipeline.audio.path').'/'.Str::uuid().'.'.$extension;
 

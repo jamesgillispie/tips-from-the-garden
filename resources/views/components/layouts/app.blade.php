@@ -18,6 +18,29 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {{-- Google Consent Mode v2 — boot with everything DENIED, before any tag
+         loads. The cookie banner (resources/js/cookie-consent.js) flips
+         analytics_storage to 'granted' only when the visitor opts in. This
+         block stays even without GTM: it's harmless and makes the consent
+         decision meaningful the instant a container is added. --}}
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('consent', 'default', {
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            analytics_storage: 'denied',
+            wait_for_update: 500,
+        });
+    </script>
+
+    {{-- Google Tag Manager — only loads once GTM_ID is set in .env. --}}
+    @if ($gtmId = config('services.google.gtm_id'))
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $gtmId }}');</script>
+    @endif
+
     <title>{{ $metaTitle }}</title>
     <meta name="description" content="{{ $metaDescription }}">
     <meta name="theme-color" content="#e6f3df">
@@ -60,6 +83,12 @@
 </head>
 <body class="min-h-screen antialiased {{ $appShell ? 'bg-zinc-50 text-zinc-800' : 'bg-garden-50 text-soil-700' }}">
 
+    {{-- GTM <noscript> fallback (only when GTM_ID is set). --}}
+    @if ($gtmId = config('services.google.gtm_id'))
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ $gtmId }}"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    @endif
+
     @if ($appShell)
         {{-- ───────────────────────  APP CHROME  ─────────────────────── --}}
         <header class="border-b border-zinc-200 bg-white">
@@ -78,6 +107,7 @@
                         <flux:menu>
                             <flux:menu.item href="{{ route('dashboard') }}" icon="squares-2x2">My garden desk</flux:menu.item>
                             <flux:menu.item href="{{ route('home') }}" icon="microphone">Record a memo</flux:menu.item>
+                            <flux:menu.item href="{{ route('account') }}" icon="cog-6-tooth">Account settings</flux:menu.item>
                             <flux:menu.separator />
                             <flux:menu.item icon="arrow-right-start-on-rectangle"
                                 x-on:click="document.getElementById('logout-form').submit()">
@@ -102,6 +132,10 @@
 
         <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-sm text-zinc-400">
             Record a memo in your garden. Get back a journal entry in your own voice.
+            <div class="mt-2">
+                <button type="button" onclick="CookieConsent.showPreferences()"
+                    class="underline underline-offset-2 hover:text-zinc-600">Cookie settings</button>
+            </div>
         </footer>
     @else
         {{-- ──────────────────────  GARDEN BRAND  ────────────────────── --}}
@@ -135,6 +169,10 @@
 
         <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-sm text-soil-700/70">
             Record a memo in your garden. Get back a journal entry in your own voice.
+            <div class="mt-2">
+                <button type="button" onclick="CookieConsent.showPreferences()"
+                    class="underline underline-offset-2 hover:text-soil-700">Cookie settings</button>
+            </div>
         </footer>
     @endif
 

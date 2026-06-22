@@ -1,6 +1,9 @@
 // Livewire's JS (and Alpine) is injected automatically via @livewireScripts.
 // App-level JS sprinkles live here.
 
+// Cookie consent banner + analytics gating (see cookie-consent.js).
+import './cookie-consent.js';
+
 // In-page voice recorder for the upload form. Records with MediaRecorder,
 // then pushes the finished clip into the Livewire `audio` upload property —
 // from there it flows through the exact same pipeline as an uploaded file.

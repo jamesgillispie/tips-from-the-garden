@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Mail\NoAccountFound;
 use App\Mail\NoAudioFound;
+use App\Models\User;
 use App\Services\SubmissionService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -27,7 +29,6 @@ class PostmarkInboundController extends Controller
         }
 
         $email = $request->input('FromFull.Email') ?? $request->input('From');
-        $name = $request->input('FromFull.Name');
 
         if (! $email) {
             Log::warning('Inbound email without a sender — ignored.');
@@ -56,9 +57,24 @@ class PostmarkInboundController extends Controller
             return response()->json(['status' => 'no-audio']);
         }
 
+        // A memo is filed by the address it came FROM, so that address has to
+        // belong to a real account. We never create one here: an unknown (or
+        // spoofed) sender can't conjure a ghost account or slip a memo onto
+        // someone else's desk — they're pointed at sign-up instead.
+        $user = User::findByEmail($email);
+
+        if (! $user) {
+            Log::info('Inbound email from an address with no account.', ['from' => $email]);
+
+            if (! $this->looksAutomated($email)) {
+                Mail::to($email)->queue(new NoAccountFound);
+            }
+
+            return response()->json(['status' => 'no-account']);
+        }
+
         $submission = $service->fromEmail(
-            email: $email,
-            name: $name,
+            user: $user,
             filename: $attachment['Name'] ?? 'memo.m4a',
             base64Content: $attachment['Content'] ?? '',
         );
