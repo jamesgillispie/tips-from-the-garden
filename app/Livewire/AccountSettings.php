@@ -255,7 +255,6 @@ class AccountSettings extends Component
             'pendingEmail' => auth()->user()->pending_email,
         ])->layout('components.layouts.app', [
             'title' => 'Account settings — '.config('app.name'),
-            'appShell' => true,
         ]);
     }
 }

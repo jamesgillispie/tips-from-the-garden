@@ -1,9 +1,5 @@
 <x-layouts.app :title="'Set a new password — '.config('app.name')">
-    <div class="mx-auto mt-4 max-w-md rounded-2xl border border-garden-100 bg-white p-6 shadow-sm sm:p-8">
-        <h2 class="font-serif text-2xl font-semibold text-garden-800">Set a new password</h2>
-        <p class="mt-2 text-base text-soil-700/80">
-            Pick a new password for your garden desk.
-        </p>
+    <x-auth.card heading="Set a new password" lede="Pick a new password for your garden desk.">
 
         <form method="POST" action="{{ route('password.update') }}" class="mt-6 space-y-5">
             @csrf
@@ -34,5 +30,5 @@
                 Save new password
             </flux:button>
         </form>
-    </div>
+    </x-auth.card>
 </x-layouts.app>

@@ -4,6 +4,24 @@
 // Cookie consent banner + analytics gating (see cookie-consent.js).
 import './cookie-consent.js';
 
+// Native View Transitions (the cross-document page crossfade and Livewire's
+// wire:transition tab swaps) intentionally *skip* themselves when the tab is
+// backgrounded, the transition is interrupted, or it's otherwise not runnable.
+// A skipped transition rejects its `ready` promise with a benign
+// InvalidStateError ("Transition was aborted…") that nothing else catches — the
+// DOM still updates correctly (its `finished` promise resolves). Swallow just
+// that one rejection so it never surfaces as a console / error-tracking noise.
+window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    if (
+        reason instanceof DOMException &&
+        reason.name === 'InvalidStateError' &&
+        /transition was aborted/i.test(reason.message)
+    ) {
+        event.preventDefault();
+    }
+});
+
 // In-page voice recorder for the upload form. Records with MediaRecorder,
 // then pushes the finished clip into the Livewire `audio` upload property —
 // from there it flows through the exact same pipeline as an uploaded file.

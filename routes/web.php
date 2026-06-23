@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\ConfirmEmailChangeController;
 use App\Http\Controllers\TranscriptController;
 use App\Http\Controllers\Webhooks\PostmarkInboundController;
@@ -34,6 +35,11 @@ Route::get('/a/{token}/download/{format}', [ArticleController::class, 'download'
 // Auth — login, register, password reset, logout — is provided by Laravel
 // Fortify. Views are wired up in App\Providers\FortifyServiceProvider, and the
 // Cloudflare Turnstile gate lives in App\Http\Middleware\VerifyTurnstile.
+
+// "Sign in with Google" via Socialite, sitting alongside Fortify. The callback
+// path must match the authorized redirect URI on the Google Cloud OAuth client.
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
 // Gardener dashboard (articles, recordings, writing voice).
 Route::get('/dashboard', Dashboard::class)

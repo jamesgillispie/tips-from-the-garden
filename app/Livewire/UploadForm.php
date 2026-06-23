@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Submission;
 use App\Services\SubmissionService;
 use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -20,6 +21,14 @@ class UploadForm extends Component
      * signed in, so the memo is always filed to the current gardener.
      */
     public string $mode = 'record';
+
+    /**
+     * The intake the previous render committed — so render() can crossfade the
+     * panel on a real tab switch but stay still during an upload-progress
+     * re-render. Server-set only, hence #[Locked].
+     */
+    #[Locked]
+    public ?string $renderedMode = null;
 
     public ?TemporaryUploadedFile $audio = null;
 
@@ -94,7 +103,11 @@ class UploadForm extends Component
 
     public function render()
     {
-        return view('livewire.upload-form')
-            ->layout('components.layouts.app', ['title' => config('app.name'), 'appShell' => true]);
+        // Crossfade the intake panel only when the tab itself changed.
+        $animateMode = $this->renderedMode !== null && $this->renderedMode !== $this->mode;
+        $this->renderedMode = $this->mode;
+
+        return view('livewire.upload-form', ['animateMode' => $animateMode])
+            ->layout('components.layouts.app', ['title' => config('app.name')]);
     }
 }

@@ -9,18 +9,14 @@
 @endphp
 
 <div class="space-y-8">
-    <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-            <h1 class="font-serif text-3xl font-semibold text-garden-800">My garden desk</h1>
-            <p class="mt-1 truncate text-base text-zinc-500">{{ auth()->user()->email }}</p>
-        </div>
+    <x-page-header title="My garden desk" :subtitle="auth()->user()->email" truncate>
         {{-- The desk's primary action: straight to recording. Full-size and
              primary so it's the obvious next tap from any tab. Sign out still
              lives in the top-bar account menu. --}}
         <flux:button href="{{ route('home') }}" variant="primary" icon="microphone" class="shrink-0">
             Record a memo
         </flux:button>
-    </div>
+    </x-page-header>
 
     {{-- Tabs --}}
     <flux:tabs wire:model.live="tab" variant="segmented" scrollable class="w-full">
@@ -31,7 +27,7 @@
 
     {{-- ─────────────────────────  JOURNAL  ───────────────────────── --}}
     @if ($tab === 'articles')
-        <section wire:key="tab-articles" class="space-y-4">
+        <section wire:key="tab-articles" class="space-y-4" @if ($animateTab) wire:transition="desk-panel" @endif>
             {{-- Search across the title and full text of every journal entry. --}}
             <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" clearable
                 placeholder="Search your journal entries…" aria-label="Search your journal entries" autocomplete="off" />
@@ -90,7 +86,7 @@
 
     {{-- ────────────────────────  RECORDINGS  ───────────────────────── --}}
     @elseif ($tab === 'recordings')
-        <section wire:key="tab-recordings" class="space-y-3">
+        <section wire:key="tab-recordings" class="space-y-3" @if ($animateTab) wire:transition="desk-panel" @endif>
             <flux:text>
                 Every memo you've sent — recorded here, uploaded, typed, or emailed in —
                 kept as a transcript you can read and download.
@@ -153,7 +149,7 @@
 
     {{-- ─────────────────────────  MY VOICE  ────────────────────────── --}}
     @else
-        <section wire:key="tab-voice" class="space-y-4">
+        <section wire:key="tab-voice" class="space-y-4" @if ($animateTab) wire:transition="desk-panel" @endif>
             <flux:text>
                 Paste samples of your own writing — blog posts, newsletters, garden journal
                 entries. The more we have, the more your journal entries sound like you.
@@ -234,8 +230,9 @@
                 Send it from <strong>{{ auth()->user()->email }}</strong> — the address on this account.
                 A memo emailed from any other address won't reach your desk.
                 Not you?
-                <button type="button" x-on:click="document.getElementById('logout-form').submit()"
-                    class="font-semibold text-garden-700 underline">Sign out</button>
+                <x-logout-form class="inline">
+                    <button type="submit" class="font-semibold text-garden-700 underline">Sign out</button>
+                </x-logout-form>
                 to switch accounts.
             </flux:callout.text>
         </flux:callout>

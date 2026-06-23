@@ -1,23 +1,10 @@
 <x-layouts.app :title="'Sign in — '.config('app.name')">
-    <div class="mb-10 text-center">
-        <h1 class="font-serif text-4xl font-semibold text-garden-800 sm:text-5xl">
-            Talk to your garden.<br>We'll write it down.
-        </h1>
-    </div>
+    <x-auth.card hero heading="Welcome back" separator-text="new to the garden?"
+        lede="Sign in to record a memo and pick up your journal entries.">
 
-    <div class="mx-auto max-w-md rounded-2xl border border-garden-100 bg-white p-6 shadow-sm sm:p-8">
-        <h2 class="font-serif text-2xl font-semibold text-garden-800">Welcome back</h2>
-        <p class="mt-2 text-base text-soil-700/80">
-            Sign in to record a memo and pick up your journal entries.
-        </p>
+        <x-auth.google />
 
-        @if (session('status'))
-            <flux:callout variant="success" icon="check-circle" class="mt-4">
-                <flux:callout.text>{{ session('status') }}</flux:callout.text>
-            </flux:callout>
-        @endif
-
-        <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-5">
+        <form method="POST" action="{{ route('login') }}" class="space-y-5">
             @csrf
             <flux:field>
                 <flux:label>Your email</flux:label>
@@ -41,17 +28,11 @@
 
             <x-turnstile />
 
-            {{-- Stays disabled until Turnstile hands us a fresh token (see x-turnstile);
-                 data-turnstile-gate is the hook its callbacks toggle. --}}
-            <flux:button type="submit" id="signin-submit" variant="primary" class="w-full" disabled data-turnstile-gate>
-                Sign in
-            </flux:button>
+            <x-turnstile-submit id="signin-submit">Sign in</x-turnstile-submit>
         </form>
 
-        <flux:separator class="my-7" text="new to the garden?" />
-
-        <p class="text-center text-base text-soil-700/80">
+        <x-slot:footer>
             <flux:link href="{{ route('register') }}" class="font-semibold">Create an account</flux:link>
-        </p>
-    </div>
+        </x-slot:footer>
+    </x-auth.card>
 </x-layouts.app>

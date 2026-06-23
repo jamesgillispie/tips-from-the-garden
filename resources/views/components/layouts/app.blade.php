@@ -2,14 +2,12 @@
     'description' => 'Record a memo in your garden. Get back a journal entry in your own voice.',
     'ogImage' => null,
     'title' => config('app.name'),
-    // When true, the page wears the neutral "app" chrome (record / desk / status).
-    // When false (default), it keeps the warm garden brand (login, article view).
-    'appShell' => false,
 ])
 
 @php
     $metaTitle = $title ?: config('app.name');
-    $metaDescription = $description ?: 'Record a memo in your garden. Get back a journal entry in your own voice.';
+    // $description already defaults to the brand tagline (see @props above).
+    $metaDescription = $description ?: config('app.name');
     $metaImage = $ogImage ?: asset('og-image.png');
 @endphp
 
@@ -81,7 +79,7 @@
     <script>window.localStorage.setItem('flux.appearance', 'light');</script>
     @fluxAppearance
 </head>
-<body class="min-h-screen antialiased {{ $appShell ? 'bg-zinc-50 text-zinc-800' : 'bg-garden-50 text-soil-700' }}">
+<body class="min-h-screen antialiased bg-garden-50 text-soil-700">
 
     {{-- GTM <noscript> fallback (only when GTM_ID is set). --}}
     @if ($gtmId = config('services.google.gtm_id'))
@@ -89,92 +87,15 @@
             height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     @endif
 
-    @if ($appShell)
-        {{-- ───────────────────────  APP CHROME  ─────────────────────── --}}
-        <header class="border-b border-zinc-200 bg-white">
-            <div class="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
-                <a href="{{ route('home') }}"
-                    class="flex shrink-0 items-center whitespace-nowrap font-serif text-lg font-semibold text-garden-800">
-                    🌱&nbsp;{{ config('app.name') }}
-                </a>
+    {{-- One header/footer across every page; the shared elements carry
+         view-transition-name hooks so they morph in place across navigations. --}}
+    <x-site-header />
 
-                @auth
-                    <flux:dropdown position="bottom" align="end">
-                        <flux:button variant="subtle" size="sm" icon="user-circle" icon:trailing="chevron-down">
-                            <span class="hidden max-w-[16ch] truncate sm:inline">{{ auth()->user()->email }}</span>
-                        </flux:button>
+    <main class="mx-auto max-w-3xl px-4 py-8 sm:py-10">
+        {{ $slot }}
+    </main>
 
-                        <flux:menu>
-                            <flux:menu.item href="{{ route('dashboard') }}" icon="squares-2x2">My garden desk</flux:menu.item>
-                            <flux:menu.item href="{{ route('home') }}" icon="microphone">Record a memo</flux:menu.item>
-                            <flux:menu.item href="{{ route('account') }}" icon="cog-6-tooth">Account settings</flux:menu.item>
-                            <flux:menu.separator />
-                            <flux:menu.item icon="arrow-right-start-on-rectangle"
-                                x-on:click="document.getElementById('logout-form').submit()">
-                                Sign out
-                            </flux:menu.item>
-                        </flux:menu>
-                    </flux:dropdown>
-
-                    {{-- Hidden POST form the Sign out menu item submits (keeps CSRF). --}}
-                    <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
-                        @csrf
-                    </form>
-                @else
-                    <flux:button href="{{ route('login') }}" variant="primary" size="sm">Sign in</flux:button>
-                @endauth
-            </div>
-        </header>
-
-        <main class="mx-auto max-w-3xl px-4 py-8 sm:py-10">
-            {{ $slot }}
-        </main>
-
-        <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-sm text-zinc-400">
-            Record a memo in your garden. Get back a journal entry in your own voice.
-            <div class="mt-2">
-                <button type="button" onclick="CookieConsent.showPreferences()"
-                    class="underline underline-offset-2 hover:text-zinc-600">Cookie settings</button>
-            </div>
-        </footer>
-    @else
-        {{-- ──────────────────────  GARDEN BRAND  ────────────────────── --}}
-        <header class="border-b border-garden-100 bg-white">
-            <div class="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-4">
-                <a href="{{ route('home') }}"
-                    class="flex shrink-0 items-center whitespace-nowrap font-serif text-lg font-semibold text-garden-800 sm:text-xl">
-                    🌱&nbsp;{{ config('app.name') }}
-                </a>
-                <nav class="flex shrink-0 items-center gap-5 text-base">
-                    @auth
-                        <a href="{{ route('dashboard') }}" title="My garden desk" aria-label="My garden desk"
-                            class="inline-flex items-center gap-2 font-medium text-garden-700 hover:text-garden-800">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke-width="1.8" stroke="currentColor" class="h-6 w-6" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" />
-                            </svg>
-                            <span class="hidden sm:inline">My garden desk</span>
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="font-medium text-garden-700 hover:underline">Sign in</a>
-                    @endauth
-                </nav>
-            </div>
-        </header>
-
-        <main class="mx-auto max-w-3xl px-4 py-10">
-            {{ $slot }}
-        </main>
-
-        <footer class="mx-auto max-w-3xl px-4 pb-10 text-center text-sm text-soil-700/70">
-            Record a memo in your garden. Get back a journal entry in your own voice.
-            <div class="mt-2">
-                <button type="button" onclick="CookieConsent.showPreferences()"
-                    class="underline underline-offset-2 hover:text-soil-700">Cookie settings</button>
-            </div>
-        </footer>
-    @endif
+    <x-site-footer />
 
     @livewireScripts
     @fluxScripts

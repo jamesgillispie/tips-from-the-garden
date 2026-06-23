@@ -1,19 +1,9 @@
 <div class="space-y-8">
-    <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-            <h1 class="font-serif text-3xl font-semibold text-garden-800">Account settings</h1>
-            <p class="mt-1 truncate text-base text-zinc-500">{{ auth()->user()->email }}</p>
-        </div>
-        <flux:button href="{{ route('dashboard') }}" variant="ghost" size="sm" icon="arrow-left" class="shrink-0">
-            <span class="hidden sm:inline">Back to desk</span>
-        </flux:button>
-    </div>
+    <x-page-header title="Account settings" :subtitle="auth()->user()->email" truncate>
+        <x-back-to-desk />
+    </x-page-header>
 
-    @if (session('status'))
-        <flux:callout variant="success" icon="check-circle">
-            <flux:callout.text>{{ session('status') }}</flux:callout.text>
-        </flux:callout>
-    @endif
+    <x-status-callout />
 
     {{-- ─────────────────────────  YOUR DETAILS  ───────────────────────── --}}
     <flux:card>

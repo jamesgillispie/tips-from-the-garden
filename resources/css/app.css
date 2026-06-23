@@ -139,3 +139,40 @@
 #cc-main .pm__title {
     font-family: var(--font-serif);
 }
+
+/* ─────────────────────────  PAGE TRANSITIONS  ─────────────────────────
+   Native cross-document View Transitions. Every navigation is still an
+   ordinary, full server-rendered page load — the browser just animates
+   between the outgoing and incoming documents. No JavaScript, no SPA, no
+   click interception: internal links, back/forward, anchor links, query
+   strings, form POST→redirects, downloads, external links and modifier-
+   click all behave exactly as a normal navigation, and GTM/consent still
+   fire once per document load. Browsers without support simply navigate
+   the old-fashioned way (progressive enhancement).
+
+   This @view-transition rule must stay at the stylesheet's top level —
+   inside a cascade layer (e.g. @layer base) it is ignored by the engine. */
+@view-transition {
+    navigation: auto;
+}
+
+/* A subtle, uniform crossfade (~300ms) for the root snapshot and every
+   named element below. The UA already crossfades root and morphs named
+   groups; we only pin the timing/easing so it reads calm rather than
+   app-like — no exaggerated movement, no slide. */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+    animation-duration: 300ms;
+    animation-timing-function: ease;
+}
+
+/* Reduced motion: collapse every transition (root + named groups) to an
+   instant cut. Navigation still happens — only the animation is removed. */
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+}

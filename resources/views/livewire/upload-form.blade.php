@@ -1,14 +1,8 @@
 <div class="space-y-8">
-    <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-            <h1 class="font-serif text-3xl font-semibold text-garden-800">Talk to your garden</h1>
-            <p class="mt-1 text-base text-zinc-500">Record a memo and get a journal entry back in your own voice.</p>
-        </div>
-        <flux:button href="{{ route('dashboard') }}" variant="ghost" size="sm" icon="arrow-left"
-            aria-label="Back to desk" class="shrink-0">
-            <span class="hidden sm:inline">Back to desk</span>
-        </flux:button>
-    </div>
+    <x-page-header title="Talk to your garden"
+        subtitle="Record a memo and get a journal entry back in your own voice.">
+        <x-back-to-desk />
+    </x-page-header>
 
     {{-- Switch how you share — recording is the default and first tab. The tabs
          sit at the top level (just like the garden desk's tabs) so moving between
@@ -24,7 +18,7 @@
     <flux:card class="space-y-6">
         <form wire:submit="submit" class="space-y-7">
             @if ($mode === 'record')
-                <div wire:key="mode-record" x-data="voiceRecorder" aria-live="polite" class="text-center">
+                <div wire:key="mode-record" x-data="voiceRecorder" aria-live="polite" class="text-center" @if ($animateMode) wire:transition="intake-panel" @endif>
 
                     {{-- This browser can't record --}}
                     <flux:callout x-show="state === 'unsupported'" x-cloak icon="information-circle" class="text-left">
@@ -122,7 +116,7 @@
                     @error('audio') <p class="mt-4 text-base font-medium text-red-600">{{ $message }}</p> @enderror
                 </div>
             @elseif ($mode === 'audio')
-                <div wire:key="mode-audio" class="mx-auto max-w-md">
+                <div wire:key="mode-audio" class="mx-auto max-w-md" @if ($animateMode) wire:transition="intake-panel" @endif>
                     <flux:field>
                         <flux:label>Your voice memo file</flux:label>
                         <flux:description>
@@ -143,7 +137,7 @@
                     </flux:field>
                 </div>
             @else
-                <div wire:key="mode-paste" class="mx-auto max-w-md">
+                <div wire:key="mode-paste" class="mx-auto max-w-md" @if ($animateMode) wire:transition="intake-panel" @endif>
                     <flux:field>
                         <flux:label>Your notes</flux:label>
                         <flux:description>

@@ -1,17 +1,10 @@
 <x-layouts.app :title="'Create your account — '.config('app.name')">
-    <div class="mb-10 text-center">
-        <h1 class="font-serif text-4xl font-semibold text-garden-800 sm:text-5xl">
-            Talk to your garden.<br>We'll write it down.
-        </h1>
-    </div>
+    <x-auth.card hero heading="Create your account" separator-text="already growing with us?"
+        lede="Set up your garden desk — it only takes a moment.">
 
-    <div class="mx-auto max-w-md rounded-2xl border border-garden-100 bg-white p-6 shadow-sm sm:p-8">
-        <h2 class="font-serif text-2xl font-semibold text-garden-800">Create your account</h2>
-        <p class="mt-2 text-base text-soil-700/80">
-            Set up your garden desk — it only takes a moment.
-        </p>
+        <x-auth.google />
 
-        <form method="POST" action="{{ route('register') }}" class="mt-6 space-y-5">
+        <form method="POST" action="{{ route('register') }}" class="space-y-5">
             @csrf
             <flux:field>
                 <flux:label>Your name</flux:label>
@@ -39,16 +32,11 @@
 
             <x-turnstile />
 
-            {{-- Disabled until Turnstile is ready; data-turnstile-gate is the toggle hook. --}}
-            <flux:button type="submit" variant="primary" class="w-full" disabled data-turnstile-gate>
-                Create account
-            </flux:button>
+            <x-turnstile-submit>Create account</x-turnstile-submit>
         </form>
 
-        <flux:separator class="my-7" text="already growing with us?" />
-
-        <p class="text-center text-base text-soil-700/80">
+        <x-slot:footer>
             <flux:link href="{{ route('login') }}" class="font-semibold">Sign in</flux:link>
-        </p>
-    </div>
+        </x-slot:footer>
+    </x-auth.card>
 </x-layouts.app>

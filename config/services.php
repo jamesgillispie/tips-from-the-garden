@@ -19,6 +19,12 @@ return [
         // tag loads at all. Analytics stays consent-gated via Consent Mode v2 —
         // see resources/js/cookie-consent.js + the layout <head>.
         'gtm_id' => env('GTM_ID'),
+
+        // Google OAuth (Laravel Socialite) — "Sign in with Google". The redirect
+        // must exactly match an authorized URI on the Google Cloud OAuth client.
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
     'turnstile' => [

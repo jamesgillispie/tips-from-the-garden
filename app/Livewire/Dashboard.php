@@ -3,8 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\WritingSample;
-use App\Support\MagicLink;
 use Flux\Flux;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -16,6 +16,15 @@ class Dashboard extends Component
     /** Which tab is showing: 'articles', 'recordings', or 'voice'. */
     #[Url]
     public string $tab = 'articles';
+
+    /**
+     * The tab the previous render committed. Lets render() tell a genuine tab
+     * switch (animate the panel) from an in-tab update like the search box
+     * (leave it alone — a crossfade per keystroke would be awful). Server-set
+     * only, so #[Locked] keeps the client from touching it.
+     */
+    #[Locked]
+    public ?string $renderedTab = null;
 
     /** Free-text search over the title and body of the gardener's journal entries. */
     #[Url]
@@ -167,6 +176,11 @@ class Dashboard extends Component
     {
         $user = auth()->user();
 
+        // Crossfade the panel only when the tab itself changed this request —
+        // not on a search keystroke or a delete, which re-render the same tab.
+        $animateTab = $this->renderedTab !== null && $this->renderedTab !== $this->tab;
+        $this->renderedTab = $this->tab;
+
         // Search applies only on the Journal tab, where the box lives. A blank
         // term leaves the list untouched, so it's a no-op everywhere else.
         $articles = $user->articles()->latest();
@@ -183,6 +197,7 @@ class Dashboard extends Component
             'samples' => $user->writingSamples()->latest()->get(),
             'memos' => $user->submissions()->with(['transcript', 'article'])->latest()->get(),
             'profileText' => $user->voiceProfile?->profile_text,
-        ])->layout('components.layouts.app', ['title' => 'My garden desk — '.config('app.name'), 'appShell' => true]);
+            'animateTab' => $animateTab,
+        ])->layout('components.layouts.app', ['title' => 'My garden desk — '.config('app.name')]);
     }
 }
