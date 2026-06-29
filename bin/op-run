@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Run a command with secrets injected straight from the 1Password Environment
+# (nothing written to disk). Useful for ephemeral runs, CI, or testing a
+# just-rotated secret without re-pulling .env.
+#   bin/op-run php artisan queue:work --timeout=3600
+#   bin/op-run php artisan tinker
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# shellcheck disable=SC1091
+source ./.op-env
+exec op run --environment "$OP_ENVIRONMENT_ID" --account "$OP_ACCOUNT" -- "$@"

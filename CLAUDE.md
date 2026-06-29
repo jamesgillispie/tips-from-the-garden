@@ -44,6 +44,28 @@ With `TRANSCRIBER_DRIVER=fake` / `WRITER_DRIVER=fake` in `.env`, `pipeline:run`
 works on any file path without whisper.cpp or Ollama installed (it never reads
 audio content with fake drivers — only the file must exist).
 
+## Secrets via 1Password
+
+Secrets live in a 1Password **Environment** (the single source of truth), not in
+a hand-edited `.env`. The Environment ID and account are in the committed,
+non-secret `.op-env`. Requires the **beta** 1Password CLI (`op environment` is
+beta-only): `brew install --cask 1password-cli@beta`.
+
+```bash
+composer env:pull                             # regenerate .env from 1Password (backs up to .env.backup)
+bin/op-run php artisan queue:work --timeout=3600   # run a command with secrets injected, nothing on disk
+bin/op-run php artisan tinker
+```
+
+- Herd serves the site, so it reads the **generated `.env`** — `op run` can't
+  reach Herd's PHP-FPM. Re-run `composer env:pull` after rotating a secret.
+- Every `op` call must pin `--account` (two accounts are configured, no default);
+  `.op-env` sets `OP_ACCOUNT` so the scripts handle it.
+- `php artisan test` needs **no** 1Password — `phpunit.xml` is hermetic.
+- Don't `php artisan config:cache` if you want secrets off disk — caching bakes
+  `env()` values into `bootstrap/cache/config.php` in plaintext.
+- More: https://www.1password.dev/environments/
+
 ## Test environment notes
 
 - `phpunit.xml` is self-contained: it sets `APP_KEY`, forces `fake` drivers,

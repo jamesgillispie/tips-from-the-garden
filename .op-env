@@ -1,0 +1,5 @@
+# Non-secret IDs for the 1Password Environment that backs this app's .env.
+# Safe to commit (these are identifiers, not secrets). Override by exporting
+# the same vars in your shell. Used by bin/env-pull and bin/op-run.
+OP_ENVIRONMENT_ID=p2cdbg6oqykk4jxx4pvo4abw2y
+OP_ACCOUNT=my.1password.com
