@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Mail\MemoNotAuthenticated;
 use App\Mail\NoAccountFound;
 use App\Mail\NoAudioFound;
 use App\Models\User;
 use App\Services\SubmissionService;
+use App\Support\SenderAuthentication;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Mailable;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -36,6 +40,22 @@ class PostmarkInboundController extends Controller
             return response()->json(['status' => 'ignored']);
         }
 
+        // Authentication is the first gate (ADR 0001): the From header alone
+        // proves nothing, so an unauthenticated message never reaches the
+        // audio or account logic — and never earns a reply to an arbitrary
+        // address. If the claimed sender is one of our gardeners, they get a
+        // rate-limited heads-up; anyone else gets silence.
+        if (! SenderAuthentication::passes($request->input('Headers', []), $email)) {
+            Log::warning('Inbound email failed sender authentication — dropped.', ['from' => $email]);
+
+            if (User::findByEmail($email)
+                && Cache::add('memo-not-authenticated:'.strtolower($email), true, now()->addDay())) {
+                $this->reply($email, new MemoNotAuthenticated);
+            }
+
+            return response()->json(['status' => 'unauthenticated']);
+        }
+
         $attachment = collect($request->input('Attachments', []))
             ->first(function (array $attachment) {
                 $type = strtolower($attachment['ContentType'] ?? '');
@@ -50,9 +70,7 @@ class PostmarkInboundController extends Controller
 
             // Tell the sender what happened instead of going quiet — but never
             // reply to addresses that look like machines, or we risk mail loops.
-            if (! $this->looksAutomated($email)) {
-                Mail::to($email)->queue(new NoAudioFound);
-            }
+            $this->reply($email, new NoAudioFound);
 
             return response()->json(['status' => 'no-audio']);
         }
@@ -66,9 +84,7 @@ class PostmarkInboundController extends Controller
         if (! $user) {
             Log::info('Inbound email from an address with no account.', ['from' => $email]);
 
-            if (! $this->looksAutomated($email)) {
-                Mail::to($email)->queue(new NoAccountFound);
-            }
+            $this->reply($email, new NoAccountFound);
 
             return response()->json(['status' => 'no-account']);
         }
@@ -80,6 +96,17 @@ class PostmarkInboundController extends Controller
         );
 
         return response()->json(['status' => 'queued', 'submission' => $submission->uuid]);
+    }
+
+    /**
+     * Every reply passes the automated-sender guard: answering a machine
+     * (no-reply, mailer-daemon, …) risks a mail loop.
+     */
+    protected function reply(string $email, Mailable $mail): void
+    {
+        if (! $this->looksAutomated($email)) {
+            Mail::to($email)->queue($mail);
+        }
     }
 
     protected function looksAutomated(string $email): bool

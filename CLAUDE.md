@@ -155,3 +155,20 @@ Twill base `Model`, while plain models (`User`, `Transcript`, `VoiceProfile`,
 Drop scraped posts (md/txt/html/json) into `database/corpus/` (gitignored), then
 `php artisan db:seed --class=Database\\Seeders\\CorpusSeeder` to load them as
 writing samples on `practice@tipsfromthegarden.test` for voice-matching tuning.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `jamesgillispie/tips-from-the-garden`, via the
+`gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See
+`docs/agents/domain.md`.
