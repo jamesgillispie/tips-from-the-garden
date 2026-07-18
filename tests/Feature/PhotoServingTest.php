@@ -32,7 +32,11 @@ class PhotoServingTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'image/jpeg');
-        $this->assertStringContainsString('immutable', (string) $response->headers->get('Cache-Control'));
+        // Long-lived but private: browsers and mail clients may keep the photo,
+        // shared caches may not — deletion is revocation and must stick.
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('immutable', $cacheControl);
+        $this->assertStringContainsString('private', $cacheControl);
         $this->assertSame('display-bytes', $response->streamedContent());
     }
 

@@ -160,12 +160,14 @@ class Dashboard extends Component
      * Remove a recording and everything that came from it. The transcript
      * cascades with the submission; the article's foreign key only nulls on a
      * hard delete, so we delete it explicitly to keep it from lingering in the
-     * Articles tab once its recording is gone.
+     * Articles tab once its recording is gone. Photos go through the model so
+     * their stored objects are deleted too — that's the revocation (ADR 0002).
      */
     public function deleteMemo(int $submissionId): void
     {
         $submission = auth()->user()->submissions()->findOrFail($submissionId);
 
+        $submission->photos()->get()->each->delete();
         $submission->article?->delete();
         $submission->delete();
 

@@ -51,6 +51,13 @@ class Submission extends Model
             $submission->status ??= self::STATUS_RECEIVED;
             $submission->published = true;
         });
+
+        // A hard delete (Twill admin destroy) would otherwise drop the photo
+        // rows through the FK cascade without firing Photo's deleted event —
+        // orphaning the stored objects the deletion is meant to revoke.
+        static::forceDeleting(function (self $submission) {
+            $submission->photos()->get()->each->delete();
+        });
     }
 
     public function user(): BelongsTo

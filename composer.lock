@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "550c6fbaa8056954b591f680e56acfab",
+    "content-hash": "bfc73fe1b59bdb02b9bd3bdde4b1e2c1",
     "packages": [
         {
             "name": "area17/twill",
@@ -12117,7 +12117,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.3"
+        "php": "^8.3",
+        "ext-imagick": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

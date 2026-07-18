@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 class SubmissionService
 {
     public function __construct(
-        protected PhotoStorer $photos,
+        protected PhotoStorer $photoStorer,
     ) {}
 
     /**
@@ -90,7 +90,7 @@ class SubmissionService
     protected function storePhotos(Submission $submission, array $photos): void
     {
         foreach ($photos as $photo) {
-            $this->photos->attach($submission, $photo->get(), $photo->getClientOriginalName());
+            $this->photoStorer->attach($submission, $photo->get(), $photo->getClientOriginalName());
         }
     }
 
@@ -116,7 +116,7 @@ class SubmissionService
         ]);
 
         foreach ($photoAttachments as $photo) {
-            $this->photos->attach(
+            $this->photoStorer->attach(
                 $submission,
                 base64_decode($photo['Content'] ?? ''),
                 $photo['Name'] ?? null,

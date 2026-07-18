@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Photo;
 use App\Models\Submission;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Imagick;
 
@@ -43,7 +42,7 @@ class PhotoStorer
         }
 
         $base = $config['path'].'/'.Str::uuid();
-        $disk = Storage::disk($config['disk']);
+        $disk = Photo::storage();
         $disk->put($path = $base.'.jpg', $display);
         $disk->put($thumbPath = $base.'_thumb.jpg', $thumb);
 

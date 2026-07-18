@@ -6,16 +6,13 @@ use App\Models\Article;
 use App\Models\Photo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
     public function show(string $token)
     {
-        $article = Article::where('download_token', $token)->firstOrFail();
-
-        return view('articles.show', ['article' => $article]);
+        return view('articles.show', ['article' => $this->articleByToken($token)]);
     }
 
     /**
@@ -25,25 +22,26 @@ class ArticleController extends Controller
      */
     public function photo(string $token, Photo $photo, ?string $size = null)
     {
-        $article = Article::where('download_token', $token)->firstOrFail();
+        $article = $this->articleByToken($token);
 
         abort_unless($photo->submission_id === $article->submission_id, 404);
 
-        $disk = Storage::disk(config('pipeline.photos.disk'));
         $path = $size === 'thumb' ? $photo->thumb_path : $photo->path;
 
-        abort_unless($disk->exists($path), 404);
+        abort_unless(Photo::storage()->exists($path), 404);
 
         // Re-encoded photos never change, so let browsers and email clients
         // keep them — this is what makes app-proxying viable (ADR 0002).
-        return $disk->response($path, null, [
-            'Cache-Control' => 'public, max-age=31536000, immutable',
+        // `private` keeps shared caches out of the trust model: deleting a
+        // photo is its revocation, and a proxy must not outlive that.
+        return Photo::storage()->response($path, null, [
+            'Cache-Control' => 'private, max-age=31536000, immutable',
         ]);
     }
 
     public function download(string $token, string $format)
     {
-        $article = Article::where('download_token', $token)->firstOrFail();
+        $article = $this->articleByToken($token);
 
         $filename = Str::slug($article->title) ?: 'article';
 
@@ -57,9 +55,9 @@ class ArticleController extends Controller
         // dompdf can't fetch the token-gated photo URLs, so the photos go in
         // as inline data URIs read straight off the private disk.
         $photoData = $article->photos()
-            ->map(function ($photo) {
+            ->map(function (Photo $photo) {
                 try {
-                    $bytes = Storage::disk(config('pipeline.photos.disk'))->get($photo->path);
+                    $bytes = Photo::storage()->get($photo->path);
                 } catch (\Throwable) {
                     return null;
                 }
@@ -71,5 +69,10 @@ class ArticleController extends Controller
 
         return Pdf::loadView('articles.pdf', ['article' => $article, 'photoData' => $photoData])
             ->download("{$filename}.pdf");
+    }
+
+    protected function articleByToken(string $token): Article
+    {
+        return Article::where('download_token', $token)->firstOrFail();
     }
 }
