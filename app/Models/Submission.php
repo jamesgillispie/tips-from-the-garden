@@ -5,6 +5,7 @@ namespace App\Models;
 use A17\Twill\Models\Model;
 use App\Mail\SubmissionFailed;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -65,6 +66,11 @@ class Submission extends Model
     public function article(): HasOne
     {
         return $this->hasOne(Article::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(Photo::class);
     }
 
     public function markAs(string $status): void

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Actions\Fortify\PasswordValidationRules;
 use App\Mail\EmailChangeConfirmation;
 use App\Mail\EmailChangeNotice;
+use App\Models\Photo;
 use App\Models\Transcript;
 use App\Models\User;
 use Flux\Flux;
@@ -231,6 +232,11 @@ class AccountSettings extends Component
     protected function purgeContent(User $user): void
     {
         $submissionIds = $user->submissions()->withTrashed()->pluck('id');
+
+        // Photos go one by one through Eloquent so the deleted event removes
+        // the stored objects — a bulk delete (or the FK cascade) would leave
+        // the files behind and the proxied URLs alive.
+        Photo::whereIn('submission_id', $submissionIds)->get()->each->delete();
 
         Transcript::whereIn('submission_id', $submissionIds)->delete();
         $user->articles()->withTrashed()->forceDelete();

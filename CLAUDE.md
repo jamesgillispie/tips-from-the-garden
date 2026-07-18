@@ -112,6 +112,20 @@ chain:
   `NoAudioFound` reply with attach instructions, unless the sender looks
   automated (no-reply/mailer-daemon/etc — loop protection).
 
+### Photos
+A gardener can attach photos to any recording (all three web modes share one
+`UploadForm::$photos` field; inbound email picks up image attachments).
+`PhotoStorer` re-encodes every photo on intake — auto-orient, EXIF stripped,
+JPEG capped at `pipeline.photos.max_edge`, plus a thumbnail — and discards the
+original (docs/adr/0003). Photos live on the `pipeline.photos.disk`
+(`PHOTO_DISK`, S3 in production) and are served only through
+`/a/{token}/photo/{photo}[/thumb]`, gated by the entry's `download_token`
+(docs/adr/0002); those URLs are baked into `ArticleReady` emails, so the route
+scheme is permanent. Photo storing is best-effort: a bad photo is skipped and
+logged, never fails the memo. Deleting a `Photo` row via Eloquent deletes its
+stored objects (that's the revocation mechanism — purge deletes photos
+one-by-one through the model, not by FK cascade).
+
 ### The pipeline never goes silent
 `Submission::markFailed()` queues a `SubmissionFailed` email to the gardener on
 the **first** transition to failed only — the chain `.catch` and each job's

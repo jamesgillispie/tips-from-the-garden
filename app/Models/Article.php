@@ -5,6 +5,7 @@ namespace App\Models;
 use A17\Twill\Models\Behaviors\HasRevisions;
 use A17\Twill\Models\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Article extends Model
@@ -50,6 +51,17 @@ class Article extends Model
     public function template(): BelongsTo
     {
         return $this->belongsTo(ArticleTemplate::class, 'article_template_id');
+    }
+
+    /**
+     * The photos captured with the recording this entry was written from —
+     * they belong to the recording but are displayed with the entry.
+     *
+     * @return Collection<int, Photo>
+     */
+    public function photos(): Collection
+    {
+        return $this->submission?->photos ?? new Collection;
     }
 
     public function bodyHtml(): string

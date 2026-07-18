@@ -7,6 +7,7 @@ use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
 use App\Mail\NoAccountFound;
 use App\Mail\NoAudioFound;
+use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -51,6 +52,85 @@ class InboundEmailTest extends TestCase
             WriteArticle::class,
             DeliverArticle::class,
         ]);
+    }
+
+    public function test_image_attachments_ride_along_as_photos(): void
+    {
+        Bus::fake();
+        Mail::fake();
+        Storage::fake(config('pipeline.audio.disk'));
+        Storage::fake(config('pipeline.photos.disk'));
+
+        User::fromEmail('gardener@example.test');
+
+        $payload = [
+            'FromFull' => ['Email' => 'gardener@example.test', 'Name' => 'Pat Gardener'],
+            'Attachments' => [
+                [
+                    'Name' => 'memo.m4a',
+                    'ContentType' => 'audio/mp4',
+                    'Content' => base64_encode('not-really-audio'),
+                ],
+                [
+                    'Name' => 'bed-one.jpg',
+                    'ContentType' => 'image/jpeg',
+                    'Content' => base64_encode($this->jpegBytes()),
+                ],
+                [
+                    'Name' => 'bed-two.jpg',
+                    'ContentType' => 'image/jpeg',
+                    'Content' => base64_encode($this->jpegBytes()),
+                ],
+            ],
+        ];
+
+        $this->postJson(route('webhooks.postmark'), $payload)
+            ->assertOk()
+            ->assertJsonPath('status', 'queued');
+
+        $submission = Submission::firstOrFail();
+        $this->assertSame(
+            ['bed-one.jpg', 'bed-two.jpg'],
+            $submission->photos()->pluck('original_filename')->all(),
+        );
+    }
+
+    public function test_a_photos_only_email_still_counts_as_no_audio(): void
+    {
+        Mail::fake();
+        Storage::fake(config('pipeline.photos.disk'));
+
+        User::fromEmail('gardener@example.test');
+
+        $payload = [
+            'FromFull' => ['Email' => 'gardener@example.test'],
+            'Attachments' => [
+                [
+                    'Name' => 'bed-one.jpg',
+                    'ContentType' => 'image/jpeg',
+                    'Content' => base64_encode($this->jpegBytes()),
+                ],
+            ],
+        ];
+
+        // Photos belong to a recording — without a memo there's nothing to
+        // attach them to, so the sender gets the usual attach-audio nudge.
+        $this->postJson(route('webhooks.postmark'), $payload)
+            ->assertOk()
+            ->assertJsonPath('status', 'no-audio');
+
+        $this->assertDatabaseCount('submissions', 0);
+        $this->assertDatabaseCount('photos', 0);
+        Mail::assertQueued(NoAudioFound::class);
+    }
+
+    private function jpegBytes(): string
+    {
+        $image = new \Imagick;
+        $image->newImage(120, 90, 'green');
+        $image->setImageFormat('jpeg');
+
+        return $image->getImageBlob();
     }
 
     public function test_inbound_email_from_an_unknown_address_creates_no_account(): void

@@ -9,6 +9,13 @@ where you can download it as a PDF to print or share.
 {{ $article->body_md }}
 
 ---
+@if ($article->photos()->isNotEmpty())
+@foreach ($article->photos() as $photo)
+[![A photo from your garden]({{ route('articles.photo', ['token' => $article->download_token, 'photo' => $photo, 'size' => 'thumb']) }})]({{ route('articles.photo', ['token' => $article->download_token, 'photo' => $photo]) }})
+@endforeach
+
+---
+@endif
 
 <x-mail::button :url="$articleUrl">
 Read it online or download a PDF

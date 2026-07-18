@@ -73,10 +73,24 @@ class PostmarkInboundController extends Controller
             return response()->json(['status' => 'no-account']);
         }
 
+        // Photos snapped alongside the memo ride in as image attachments.
+        // They're optional extras — the storer caps and skips as needed.
+        $photos = collect($request->input('Attachments', []))
+            ->filter(function (array $attachment) {
+                $type = strtolower($attachment['ContentType'] ?? '');
+                $ext = strtolower(pathinfo($attachment['Name'] ?? '', PATHINFO_EXTENSION));
+
+                return str_starts_with($type, 'image/')
+                    || in_array($ext, config('pipeline.photos.mimes'), true);
+            })
+            ->values()
+            ->all();
+
         $submission = $service->fromEmail(
             user: $user,
             filename: $attachment['Name'] ?? 'memo.m4a',
             base64Content: $attachment['Content'] ?? '',
+            photoAttachments: $photos,
         );
 
         return response()->json(['status' => 'queued', 'submission' => $submission->uuid]);

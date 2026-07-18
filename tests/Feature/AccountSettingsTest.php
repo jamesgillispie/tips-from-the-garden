@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -241,6 +242,30 @@ class AccountSettingsTest extends TestCase
             'profile_text' => null,
             'sample_count' => 0,
         ]);
+    }
+
+    public function test_wiping_data_deletes_photo_files_too(): void
+    {
+        Storage::fake(config('pipeline.photos.disk'));
+
+        $user = $this->gardener();
+        $memo = $this->memoFor($user, 'The dahlias are blooming early.');
+
+        $disk = Storage::disk(config('pipeline.photos.disk'));
+        $disk->put('photos/one.jpg', 'display-bytes');
+        $disk->put('photos/one_thumb.jpg', 'thumb-bytes');
+        $memo->photos()->create(['path' => 'photos/one.jpg', 'thumb_path' => 'photos/one_thumb.jpg']);
+
+        Livewire::actingAs($user)
+            ->test(AccountSettings::class)
+            ->set('wipeConfirmation', 'wipe')
+            ->call('wipeData')
+            ->assertHasNoErrors();
+
+        // Deleting the rows must take the stored objects with it — that's the
+        // revocation mechanism for the proxied photo URLs (ADR 0002).
+        $this->assertDatabaseCount('photos', 0);
+        $disk->assertMissing(['photos/one.jpg', 'photos/one_thumb.jpg']);
     }
 
     public function test_wiping_needs_the_word_wipe(): void

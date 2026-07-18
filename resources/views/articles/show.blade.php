@@ -16,6 +16,23 @@
             {!! $article->bodyHtml() !!}
         </div>
 
+        @if ($article->photos()->isNotEmpty())
+            <section class="mt-10 border-t border-garden-100 pt-6">
+                <h2 class="font-serif text-2xl font-semibold text-garden-800">From the garden</h2>
+                <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    @foreach ($article->photos() as $photo)
+                        <a href="{{ route('articles.photo', ['token' => $article->download_token, 'photo' => $photo]) }}"
+                            target="_blank" rel="noopener">
+                            <img src="{{ route('articles.photo', ['token' => $article->download_token, 'photo' => $photo, 'size' => 'thumb']) }}"
+                                alt="A photo from the garden"
+                                class="aspect-square w-full rounded-xl object-cover shadow-sm transition hover:opacity-90"
+                                loading="lazy">
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <footer class="mt-10 flex flex-wrap items-center gap-3 border-t border-garden-100 pt-6">
             <flux:button href="{{ route('articles.download', ['token' => $article->download_token, 'format' => 'pdf']) }}"
                 variant="primary" icon="arrow-down-tray">

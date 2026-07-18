@@ -19,6 +19,14 @@
 
     {!! $article->bodyHtml() !!}
 
+    @if ($photoData->isNotEmpty())
+        <div class="photos">
+            @foreach ($photoData as $src)
+                <img src="{{ $src }}" style="width: 100%; margin: 10px 0;" alt="A photo from the garden">
+            @endforeach
+        </div>
+    @endif
+
     <div class="footer">Written from a garden voice memo · {{ config('app.name') }}</div>
 </body>
 </html>
