@@ -150,6 +150,44 @@
                 </div>
             @endif
 
+            {{-- Photos ride along with every kind of memo, so this sits outside
+                 the mode panels — switching tabs keeps what you've attached. --}}
+            <div class="mx-auto max-w-md">
+                <flux:field>
+                    <flux:label>Photos from the garden <span class="font-normal text-zinc-400">(optional)</span></flux:label>
+                    <flux:description>
+                        Snap what you're talking about — up to
+                        {{ config('pipeline.photos.max_per_submission') }} photos will
+                        appear with your journal entry.
+                    </flux:description>
+                    <input type="file" id="photos" wire:model="photos" multiple
+                        accept="image/*"
+                        class="mt-2 block w-full text-base file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-garden-100 file:px-5 file:py-3 file:text-base file:font-semibold file:text-garden-800 hover:file:bg-garden-100/70">
+                    <div wire:loading wire:target="photos" class="mt-2 flex items-center gap-2 text-base font-medium text-garden-700">
+                        <flux:icon.loading class="size-4" /> Adding your photos…
+                    </div>
+                    <div wire:loading.remove wire:target="photos">
+                        @if (count($photos))
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach ($photos as $index => $photo)
+                                    <span wire:key="photo-{{ $index }}"
+                                        class="inline-flex items-center gap-2 rounded-full bg-garden-100 px-3 py-1 text-sm font-medium text-garden-800">
+                                        📷 {{ $photo->getClientOriginalName() }}
+                                        <button type="button" wire:click="removePhoto({{ $index }})"
+                                            class="font-semibold text-garden-700 hover:text-garden-800"
+                                            aria-label="Remove {{ $photo->getClientOriginalName() }}">&times;</button>
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <flux:error name="photos" />
+                    @foreach (collect($errors->get('photos.*'))->flatten()->unique() as $message)
+                        <p class="mt-1 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @endforeach
+                </flux:field>
+            </div>
+
             <p class="mx-auto max-w-md text-center text-base text-zinc-500">
                 Posting as <span class="font-semibold text-garden-800">{{ auth()->user()->email }}</span> —
                 it'll land on your garden desk.
@@ -160,7 +198,7 @@
             @if ($mode !== 'record')
                 <div class="mx-auto max-w-md">
                     <flux:button type="submit" variant="primary" icon="paper-airplane" class="w-full"
-                        wire:loading.attr="disabled" wire:target="audio">
+                        wire:loading.attr="disabled" wire:target="audio, photos">
                         Turn it into a journal entry
                     </flux:button>
                 </div>

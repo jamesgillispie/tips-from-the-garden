@@ -16,10 +16,16 @@ use Illuminate\Support\Str;
 
 class SubmissionService
 {
+    public function __construct(
+        protected PhotoStorer $photoStorer,
+    ) {}
+
     /**
      * Intake from the web form — an uploaded file or an in-browser recording.
+     *
+     * @param  array<int, UploadedFile>  $photos
      */
-    public function fromUpload(UploadedFile $file, string $email, string $source = Submission::SOURCE_UPLOAD): Submission
+    public function fromUpload(UploadedFile $file, string $email, string $source = Submission::SOURCE_UPLOAD, array $photos = []): Submission
     {
         $user = User::fromEmail($email);
 
@@ -35,6 +41,8 @@ class SubmissionService
             'original_filename' => $file->getClientOriginalName(),
         ]);
 
+        $this->storePhotos($submission, $photos);
+
         $this->dispatchPipeline($submission);
 
         return $submission;
@@ -43,8 +51,10 @@ class SubmissionService
     /**
      * Intake from a transcript the user typed or pasted directly — no audio,
      * so the pipeline skips transcription and goes straight to writing.
+     *
+     * @param  array<int, UploadedFile>  $photos
      */
-    public function fromTranscript(string $transcript, string $email): Submission
+    public function fromTranscript(string $transcript, string $email, array $photos = []): Submission
     {
         $user = User::fromEmail($email);
 
@@ -60,6 +70,8 @@ class SubmissionService
             'transcriber' => 'paste',
         ]);
 
+        $this->storePhotos($submission, $photos);
+
         $this->dispatchChain($submission, [
             new WriteArticle($submission),
             new DeliverArticle($submission),
@@ -69,11 +81,27 @@ class SubmissionService
     }
 
     /**
-     * Intake from the inbound email webhook (attachment arrives base64-encoded).
+     * Bank photos against the recording *before* the chain dispatches — on a
+     * sync queue delivery runs inside dispatch, and the delivered email
+     * includes the photos.
+     *
+     * @param  array<int, UploadedFile>  $photos
+     */
+    protected function storePhotos(Submission $submission, array $photos): void
+    {
+        foreach ($photos as $photo) {
+            $this->photoStorer->attach($submission, $photo->get(), $photo->getClientOriginalName());
+        }
+    }
+
+    /**
+     * Intake from the inbound email webhook (attachments arrive base64-encoded).
      * The account is resolved by the controller — only an existing gardener can
      * email a memo in, so this never creates a user.
+     *
+     * @param  array<int, array{Name?: string, Content?: string}>  $photoAttachments
      */
-    public function fromEmail(User $user, string $filename, string $base64Content): Submission
+    public function fromEmail(User $user, string $filename, string $base64Content, array $photoAttachments = []): Submission
     {
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION)) ?: 'm4a';
         $path = config('pipeline.audio.path').'/'.Str::uuid().'.'.$extension;
@@ -86,6 +114,14 @@ class SubmissionService
             'audio_path' => $path,
             'original_filename' => $filename,
         ]);
+
+        foreach ($photoAttachments as $photo) {
+            $this->photoStorer->attach(
+                $submission,
+                base64_decode($photo['Content'] ?? ''),
+                $photo['Name'] ?? null,
+            );
+        }
 
         Mail::to($user->email)->queue(new SubmissionReceived($submission));
 

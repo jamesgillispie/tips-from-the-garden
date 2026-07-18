@@ -5,6 +5,7 @@ namespace App\Models;
 use A17\Twill\Models\Model;
 use App\Mail\SubmissionFailed;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -50,6 +51,13 @@ class Submission extends Model
             $submission->status ??= self::STATUS_RECEIVED;
             $submission->published = true;
         });
+
+        // A hard delete (Twill admin destroy) would otherwise drop the photo
+        // rows through the FK cascade without firing Photo's deleted event —
+        // orphaning the stored objects the deletion is meant to revoke.
+        static::forceDeleting(function (self $submission) {
+            $submission->photos()->get()->each->delete();
+        });
     }
 
     public function user(): BelongsTo
@@ -65,6 +73,11 @@ class Submission extends Model
     public function article(): HasOne
     {
         return $this->hasOne(Article::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(Photo::class);
     }
 
     public function markAs(string $status): void

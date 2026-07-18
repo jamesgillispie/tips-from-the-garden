@@ -70,6 +70,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Photo intake
+    |--------------------------------------------------------------------------
+    |
+    | Photos captured alongside a recording. Every photo is re-encoded on
+    | intake (JPEG, capped long edge, EXIF stripped) and the original is
+    | discarded — see docs/adr/0003. Stored on a private disk and served only
+    | through the app's token-gated route — see docs/adr/0002. Production
+    | sets PHOTO_DISK=s3; audio stays on local disk (whisper.cpp needs a
+    | local file) so the two disks are configured separately.
+    |
+    */
+
+    'photos' => [
+        'disk' => env('PHOTO_DISK', 'local'),
+        'path' => 'photos',
+        'max_per_submission' => env('PHOTO_MAX_PER_SUBMISSION', 4),
+        'max_size_kb' => env('PHOTO_MAX_SIZE_KB', 15360), // 15 MB — room for phone originals
+        'mimes' => ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
+        'max_edge' => 2000,   // display copy: long edge cap in px
+        'thumb_edge' => 640,  // thumbnail: long edge cap in px
+        'quality' => 82,      // JPEG quality for both re-encodes
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Voice profiles
     |--------------------------------------------------------------------------
     |

@@ -37,13 +37,7 @@ class PostmarkInboundController extends Controller
         }
 
         $attachment = collect($request->input('Attachments', []))
-            ->first(function (array $attachment) {
-                $type = strtolower($attachment['ContentType'] ?? '');
-                $ext = strtolower(pathinfo($attachment['Name'] ?? '', PATHINFO_EXTENSION));
-
-                return str_starts_with($type, 'audio/')
-                    || in_array($ext, config('pipeline.audio.mimes'), true);
-            });
+            ->first(fn (array $attachment) => $this->attachmentMatches($attachment, 'audio', config('pipeline.audio.mimes')));
 
         if (! $attachment) {
             Log::info('Inbound email had no audio attachment.', ['from' => $email]);
@@ -73,13 +67,37 @@ class PostmarkInboundController extends Controller
             return response()->json(['status' => 'no-account']);
         }
 
+        // Photos snapped alongside the memo ride in as image attachments.
+        // They're optional extras — the storer caps and skips as needed.
+        $photos = collect($request->input('Attachments', []))
+            ->filter(fn (array $attachment) => $this->attachmentMatches($attachment, 'image', config('pipeline.photos.mimes')))
+            ->values()
+            ->all();
+
         $submission = $service->fromEmail(
             user: $user,
             filename: $attachment['Name'] ?? 'memo.m4a',
             base64Content: $attachment['Content'] ?? '',
+            photoAttachments: $photos,
         );
 
         return response()->json(['status' => 'queued', 'submission' => $submission->uuid]);
+    }
+
+    /**
+     * Does a Postmark attachment look like the given media kind — by declared
+     * content type, or by file extension when the type is missing or generic?
+     *
+     * @param  array<string, mixed>  $attachment
+     * @param  array<int, string>  $extensions
+     */
+    protected function attachmentMatches(array $attachment, string $typePrefix, array $extensions): bool
+    {
+        $type = strtolower($attachment['ContentType'] ?? '');
+        $ext = strtolower(pathinfo($attachment['Name'] ?? '', PATHINFO_EXTENSION));
+
+        return str_starts_with($type, $typePrefix.'/')
+            || in_array($ext, $extensions, true);
     }
 
     protected function looksAutomated(string $email): bool

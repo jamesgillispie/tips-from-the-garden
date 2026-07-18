@@ -32,6 +32,13 @@ Route::get('/a/{token}/download/{format}', [ArticleController::class, 'download'
     ->whereIn('format', ['md', 'pdf'])
     ->name('articles.download');
 
+// Photos are proxied from a private disk, gated by the same entry token
+// (ADR 0002). These URLs are baked into delivered emails, so the scheme is
+// effectively permanent — don't move it.
+Route::get('/a/{token}/photo/{photo}/{size?}', [ArticleController::class, 'photo'])
+    ->whereIn('size', ['thumb'])
+    ->name('articles.photo');
+
 // Auth — login, register, password reset, logout — is provided by Laravel
 // Fortify. Views are wired up in App\Providers\FortifyServiceProvider, and the
 // Cloudflare Turnstile gate lives in App\Http\Middleware\VerifyTurnstile.

@@ -35,6 +35,14 @@ class UploadForm extends Component
     public string $transcript = '';
 
     /**
+     * Photos captured alongside the memo. Shared across all three intake
+     * tabs — swapping how you tell the story shouldn't drop what you saw.
+     *
+     * @var array<int, TemporaryUploadedFile>
+     */
+    public array $photos = [];
+
+    /**
      * The intake tabs bind straight to $mode via wire:model. Whenever it
      * changes we clear any stale validation errors and keep the value to the
      * three known modes (the tab names are controlled, but stay defensive).
@@ -47,11 +55,20 @@ class UploadForm extends Component
 
     protected function rules(): array
     {
+        $rules = [
+            'photos' => ['array', 'max:'.config('pipeline.photos.max_per_submission')],
+            'photos.*' => [
+                'file',
+                'mimes:'.implode(',', config('pipeline.photos.mimes')),
+                'max:'.config('pipeline.photos.max_size_kb'),
+            ],
+        ];
+
         if ($this->mode === 'paste') {
-            return ['transcript' => ['required', 'string', 'min:40', 'max:50000']];
+            return $rules + ['transcript' => ['required', 'string', 'min:40', 'max:50000']];
         }
 
-        return [
+        return $rules + [
             'audio' => [
                 'required',
                 'file',
@@ -71,7 +88,18 @@ class UploadForm extends Component
             'audio.max' => 'That recording is too large — anything under about an hour is fine.',
             'transcript.required' => 'Type or paste your garden notes first.',
             'transcript.min' => "Give us a few sentences at least — a short note doesn't tell us much.",
+            'photos.max' => 'Up to '.config('pipeline.photos.max_per_submission').' photos per memo — pick your favourites.',
+            'photos.*.mimes' => "That file doesn't look like a photo — a JPEG, PNG, or HEIC from your camera works best.",
+            'photos.*.max' => 'That photo is too large — anything straight from a phone camera is fine.',
         ];
+    }
+
+    /** Drop a staged photo before it's submitted. */
+    public function removePhoto(int $index): void
+    {
+        unset($this->photos[$index]);
+        $this->photos = array_values($this->photos);
+        $this->resetErrorBag();
     }
 
     public function submit(SubmissionService $service)
@@ -91,9 +119,9 @@ class UploadForm extends Component
         RateLimiter::hit($key, 600);
 
         $submission = match ($this->mode) {
-            'paste' => $service->fromTranscript($this->transcript, $email),
-            'record' => $service->fromUpload($this->audio, $email, Submission::SOURCE_RECORD),
-            default => $service->fromUpload($this->audio, $email),
+            'paste' => $service->fromTranscript($this->transcript, $email, $this->photos),
+            'record' => $service->fromUpload($this->audio, $email, Submission::SOURCE_RECORD, $this->photos),
+            default => $service->fromUpload($this->audio, $email, photos: $this->photos),
         };
 
         // Straight to the live processing page — it polls the pipeline and then
