@@ -40,7 +40,7 @@ class InboundEmailTest extends TestCase
             ],
         ];
 
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'queued');
 
@@ -84,7 +84,7 @@ class InboundEmailTest extends TestCase
             ],
         ];
 
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'queued');
 
@@ -115,7 +115,7 @@ class InboundEmailTest extends TestCase
 
         // Photos belong to a recording — without a memo there's nothing to
         // attach them to, so the sender gets the usual attach-audio nudge.
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'no-audio');
 
@@ -150,7 +150,7 @@ class InboundEmailTest extends TestCase
             ],
         ];
 
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'no-account');
 
@@ -178,7 +178,7 @@ class InboundEmailTest extends TestCase
             ],
         ];
 
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'no-account');
 
@@ -195,7 +195,7 @@ class InboundEmailTest extends TestCase
             'Attachments' => [],
         ];
 
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'no-audio');
 
@@ -213,7 +213,7 @@ class InboundEmailTest extends TestCase
             'Attachments' => [],
         ];
 
-        $this->postJson(route('webhooks.postmark'), $payload)
+        $this->postJson($this->webhookUrl(), $payload)
             ->assertOk()
             ->assertJsonPath('status', 'no-audio');
 
@@ -226,5 +226,29 @@ class InboundEmailTest extends TestCase
 
         $this->postJson(route('webhooks.postmark').'?token=wrong', [])
             ->assertForbidden();
+    }
+
+    public function test_a_missing_token_config_fails_closed(): void
+    {
+        // A blank token used to skip the check entirely, leaving the webhook
+        // open to anyone. It must reject instead.
+        config(['services.postmark.inbound_token' => '']);
+
+        $this->postJson(route('webhooks.postmark'), [])
+            ->assertForbidden();
+    }
+
+    public function test_a_request_with_no_token_at_all_is_rejected(): void
+    {
+        $this->postJson(route('webhooks.postmark'), [])
+            ->assertForbidden();
+    }
+
+    /**
+     * The webhook URL carrying the token the test suite is configured with.
+     */
+    private function webhookUrl(): string
+    {
+        return route('webhooks.postmark').'?token='.config('services.postmark.inbound_token');
     }
 }

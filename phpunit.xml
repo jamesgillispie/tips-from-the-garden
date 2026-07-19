@@ -28,7 +28,7 @@
         <env name="WRITER_DRIVER" value="fake"/>
         <!-- Keep the suite hermetic: the inbound webhook must default to "no
              token configured" so the tests that own their token can set it. -->
-        <env name="POSTMARK_INBOUND_TOKEN" value=""/>
+        <env name="POSTMARK_INBOUND_TOKEN" value="test-inbound-token"/>
         <!-- Empty secret => Turnstile::verify short-circuits (no network); the
              tests that exercise the check set their own secret + fake HTTP. -->
         <env name="TURNSTILE_SECRET_KEY" value=""/>

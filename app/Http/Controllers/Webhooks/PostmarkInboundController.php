@@ -22,9 +22,17 @@ class PostmarkInboundController extends Controller
      */
     public function __invoke(Request $request, SubmissionService $service)
     {
-        $expected = config('services.postmark.inbound_token');
+        $expected = (string) config('services.postmark.inbound_token');
 
-        if ($expected && ! hash_equals($expected, (string) $request->query('token'))) {
+        // Fail closed. A blank token used to skip the check entirely, which meant
+        // one missing env var silently opened this endpoint to anyone.
+        if ($expected === '') {
+            Log::critical('Postmark inbound token is not configured; rejecting webhook. Set POSTMARK_INBOUND_TOKEN.');
+
+            abort(403);
+        }
+
+        if (! hash_equals($expected, (string) $request->query('token'))) {
             abort(403);
         }
 

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Verifies a Cloudflare Turnstile token server-side. Guards the public auth
@@ -14,9 +15,18 @@ class Turnstile
     {
         $secret = config('services.turnstile.secret_key');
 
-        // No secret configured (e.g. in the test suite) — treat as disabled.
+        // No secret configured. Outside local/testing this is a misconfiguration,
+        // not a feature — fail closed and shout, rather than silently leaving the
+        // public auth forms open to bots. A broken sign-in is recoverable; an
+        // undetected open door is not.
         if (empty($secret)) {
-            return true;
+            if (app()->environment('local', 'testing')) {
+                return true;
+            }
+
+            Log::critical('Turnstile secret is not configured; refusing to verify. Set TURNSTILE_SECRET_KEY.');
+
+            return false;
         }
 
         if (empty($token)) {
