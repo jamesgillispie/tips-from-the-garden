@@ -6,6 +6,7 @@ use App\Pipeline\Concerns\BuildsArticlePrompts;
 use App\Pipeline\Contracts\WriterContract;
 use App\Pipeline\Data\ArticleDraft;
 use App\Pipeline\Data\WriteRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -28,11 +29,7 @@ class OllamaWriter implements WriterContract
 
     public function summarizeStyle(array $samples): string
     {
-        $joined = collect($samples)
-            ->map(fn (string $sample, int $i) => '<sample id="'.($i + 1).'">'."\n".trim($sample)."\n</sample>")
-            ->implode("\n\n");
-
-        return trim($this->chat($this->styleSystemPrompt(), $joined));
+        return trim($this->chat($this->styleSystemPrompt(), $this->fencedSamples($samples)));
     }
 
     public function identifier(): string
@@ -42,7 +39,16 @@ class OllamaWriter implements WriterContract
 
     protected function chat(string $system, string $user): string
     {
+        // Same transient-failure retry as AnthropicWriter — a local Ollama that
+        // is still loading a model answers 5xx for the first few seconds.
         $response = Http::timeout($this->timeout)
+            ->retry(3, 2000, function (\Throwable $e) {
+                if (! $e instanceof RequestException) {
+                    return true;
+                }
+
+                return $e->response->status() >= 500;
+            }, throw: false)
             ->post(rtrim($this->baseUrl, '/').'/v1/chat/completions', [
                 'model' => $this->model,
                 'messages' => [
