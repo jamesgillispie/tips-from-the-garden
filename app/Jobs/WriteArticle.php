@@ -17,7 +17,16 @@ class WriteArticle implements ShouldQueue
 
     public int $timeout = 1800;
 
-    public int $tries = 2;
+    public int $tries = 3;
+
+    /**
+     * Space the retries out. Without a backoff the attempts fire back-to-back,
+     * so a rate limit that would clear in seconds burns every try instead.
+     * The writer itself also retries transient HTTP failures internally.
+     *
+     * @return list<int>
+     */
+    public array $backoff = [60, 300];
 
     public function __construct(
         public Submission $submission,
