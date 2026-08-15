@@ -6,6 +6,7 @@ use A17\Twill\Http\Controllers\Admin\ModuleController as BaseModuleController;
 use A17\Twill\Models\Contracts\TwillModelContract;
 use A17\Twill\Services\Forms\Fields\Input;
 use A17\Twill\Services\Forms\Form;
+use A17\Twill\Services\Listings\Columns\Image;
 use A17\Twill\Services\Listings\Columns\Text;
 use A17\Twill\Services\Listings\TableColumns;
 
@@ -42,10 +43,20 @@ class SubmissionController extends BaseModuleController
     {
         $columns = parent::additionalIndexTableColumns();
 
+        $columns->add(Image::make()->field('photo_thumbnail')->title('Photo'));
         $columns->add(Text::make()->field('status')->title('Status'));
         $columns->add(Text::make()->field('source')->title('Source'));
         $columns->add(Text::make()->field('created_at')->title('Received'));
 
         return $columns;
+    }
+
+    protected function formatListData($data, $model): array
+    {
+        $data['photo_thumbnail'] = $model->photos()->isNotEmpty()
+            ? asset(route('articles.photo', ['token' => $model->article?->download_token ?? '', 'photo' => $model->photos->first(), 'size' => 'thumb']))
+            : null;
+
+        return $data;
     }
 }

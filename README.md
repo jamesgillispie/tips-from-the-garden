@@ -6,6 +6,17 @@ article written in your own voice, ready to download.
 See `../ARCHITECTURE.md` for the full design. Stack: Laravel 12 · Twill 3.5 ·
 Livewire 4 · whisper.cpp · Ollama → Claude API.
 
+## Deploy (laptop → Mac mini)
+
+```bash
+./deploy.sh
+```
+
+Rsyncs this folder to the mini (`jdg@100.113.188.77:~/tips-from-the-garden`),
+then installs deps, builds assets, migrates, re-caches config/views, and
+restarts the web + queue launchd agents. Live at
+<https://journal.manorhousegardens.org>. Full runbook: `DEPLOYMENT.md`.
+
 ## First-time setup (Mac, Laravel Herd)
 
 1. **Install Herd** — download from [herd.laravel.com](https://herd.laravel.com).

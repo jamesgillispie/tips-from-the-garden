@@ -54,6 +54,10 @@
                     <ul class="divide-y divide-zinc-100">
                         @foreach ($articles as $article)
                             <li class="flex items-center justify-between gap-4 px-4 py-4">
+                                @if ($article->photos()->isNotEmpty())
+                                    <img src="{{ route('articles.photo', ['token' => $article->download_token, 'photo' => $article->photos->first(), 'size' => 'thumb']) }}"
+                                        alt="Photo from the garden" class="h-12 w-12 rounded-lg object-cover flex-shrink-0" loading="lazy">
+                                @endif
                                 <div class="min-w-0">
                                     <a href="{{ $article->publicUrl() }}" class="text-lg font-medium text-garden-800 hover:underline">
                                         {{ $article->title }}
