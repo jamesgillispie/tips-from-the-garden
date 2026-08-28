@@ -1,7 +1,7 @@
 // Livewire's JS (and Alpine) is injected automatically via @livewireScripts.
 // App-level JS sprinkles live here.
 
-// Cookie consent banner + analytics gating (see cookie-consent.js).
+// Unified privacy banner: analytics gating + account-backed AI consent.
 import './cookie-consent.js';
 
 // Native View Transitions (the cross-document page crossfade and Livewire's

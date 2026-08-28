@@ -53,6 +53,26 @@ class LoginFlowTest extends TestCase
         $user = User::where('email', 'rose@example.test')->sole();
         $this->assertNotNull($user->voiceProfile);
         $this->assertTrue(Hash::check('correct-horse-battery', $user->password));
+        $this->assertFalse($user->ai_opt_in);
+    }
+
+    public function test_registration_carries_an_explicit_privacy_banner_choice_to_the_account(): void
+    {
+        $this->post(route('register'), [
+            'name' => 'Rose',
+            'email' => 'rose@example.test',
+            'password' => 'correct-horse-battery',
+            'password_confirmation' => 'correct-horse-battery',
+            'consent_recorded' => '1',
+            'ai_consent' => '1',
+            'analytics_consent' => '0',
+        ])->assertRedirect(route('home'));
+
+        $user = User::where('email', 'rose@example.test')->sole();
+        $this->assertTrue($user->canTranscribe());
+        $this->assertTrue($user->canWriteArticles());
+        $this->assertTrue($user->canLearnVoice());
+        $this->assertSame(User::AI_CHECK_IN_EMAIL, $user->aiCheckInChannel());
     }
 
     public function test_registration_rejects_a_duplicate_email_case_insensitively(): void

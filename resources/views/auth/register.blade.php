@@ -6,6 +6,12 @@
 
         <form method="POST" action="{{ route('register') }}" class="space-y-5">
             @csrf
+            {{-- Filled by resources/js/cookie-consent.js. Missing interaction
+                 remains an explicit opt-out; registration itself never implies consent. --}}
+            <input type="hidden" name="consent_recorded" value="0" data-consent-recorded>
+            <input type="hidden" name="ai_consent" value="0" data-ai-consent>
+            <input type="hidden" name="analytics_consent" value="0" data-analytics-consent>
+
             <flux:field>
                 <flux:label>Your name</flux:label>
                 <flux:input type="text" name="name" required :value="old('name')" autocomplete="name" />

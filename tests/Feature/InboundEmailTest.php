@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Jobs\DeliverArticle;
 use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
+use App\Mail\AiTranscriptionDisabled;
 use App\Mail\NoAccountFound;
 use App\Mail\NoAudioFound;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\AiConsentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
@@ -27,7 +29,8 @@ class InboundEmailTest extends TestCase
 
         // The email door only files memos for an address that already has an
         // account — so the gardener has to exist before they can email one in.
-        User::fromEmail('gardener@example.test');
+        $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         $payload = [
             'FromFull' => ['Email' => 'gardener@example.test', 'Name' => 'Pat Gardener'],
@@ -54,6 +57,33 @@ class InboundEmailTest extends TestCase
         ]);
     }
 
+    public function test_inbound_audio_is_left_untouched_when_transcription_is_off(): void
+    {
+        Bus::fake();
+        Mail::fake();
+        Storage::fake(config('pipeline.audio.disk'));
+
+        User::fromEmail('gardener@example.test');
+
+        $payload = [
+            'FromFull' => ['Email' => 'gardener@example.test'],
+            'Attachments' => [[
+                'Name' => 'memo.m4a',
+                'ContentType' => 'audio/mp4',
+                'Content' => base64_encode('not-really-audio'),
+            ]],
+        ];
+
+        $this->postJson(route('webhooks.postmark'), $payload)
+            ->assertOk()
+            ->assertJsonPath('status', 'ai-disabled');
+
+        $this->assertDatabaseCount('submissions', 0);
+        $this->assertSame([], Storage::disk(config('pipeline.audio.disk'))->allFiles());
+        Bus::assertNothingDispatched();
+        Mail::assertQueued(AiTranscriptionDisabled::class);
+    }
+
     public function test_image_attachments_ride_along_as_photos(): void
     {
         Bus::fake();
@@ -61,7 +91,8 @@ class InboundEmailTest extends TestCase
         Storage::fake(config('pipeline.audio.disk'));
         Storage::fake(config('pipeline.photos.disk'));
 
-        User::fromEmail('gardener@example.test');
+        $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         $payload = [
             'FromFull' => ['Email' => 'gardener@example.test', 'Name' => 'Pat Gardener'],

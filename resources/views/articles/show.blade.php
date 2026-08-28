@@ -1,6 +1,15 @@
-<x-layouts.app :title="$article->title.' — '.config('app.name')">
+<x-layouts.app :title="$article->title.' — '.config('app.name')"
+    :ai-assisted="$article->is_ai_assisted" :ai-model="$article->ai_model">
     <article class="rounded-2xl border border-garden-100 bg-white p-8 sm:p-12">
         <header class="mb-8 border-b border-garden-100 pb-6">
+            @if ($article->is_ai_assisted)
+                <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5"
+                    role="note" aria-label="AI-assisted article, generated with help from artificial intelligence">
+                    <img src="{{ asset('icons/eu-ai-labels/ai-label-black.svg') }}" alt="" aria-hidden="true"
+                        class="size-5 shrink-0" width="20" height="20" loading="eager">
+                    <span class="text-sm font-medium text-zinc-600">AI-assisted article</span>
+                </div>
+            @endif
             <h1 class="font-serif text-3xl font-semibold text-garden-800 sm:text-4xl">
                 {{ $article->title }}
             </h1>

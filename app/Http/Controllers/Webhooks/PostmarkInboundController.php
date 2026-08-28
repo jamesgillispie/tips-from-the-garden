@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Mail\AiTranscriptionDisabled;
 use App\Mail\NoAccountFound;
 use App\Mail\NoAudioFound;
 use App\Models\User;
@@ -65,6 +66,18 @@ class PostmarkInboundController extends Controller
             }
 
             return response()->json(['status' => 'no-account']);
+        }
+
+        if (! $user->canTranscribe()) {
+            Log::info('Inbound memo left untouched because AI transcription is disabled.', [
+                'user_id' => $user->id,
+            ]);
+
+            if (! $this->looksAutomated($email)) {
+                Mail::to($email)->queue(new AiTranscriptionDisabled);
+            }
+
+            return response()->json(['status' => 'ai-disabled']);
         }
 
         // Photos snapped alongside the memo ride in as image attachments.

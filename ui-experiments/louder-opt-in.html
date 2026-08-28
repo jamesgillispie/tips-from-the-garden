@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opt-In UI Experiments - Tips from the Garden</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --garden-50: #fafdf5;
+            --garden-100: #e6f3df;
+            --garden-200: #c9e3bc;
+            --garden-600: #5c944d;
+            --garden-700: #447439;
+            --garden-800: #2a4a23;
+            --soil-700: #5c544d;
+            --zinc-100: #f4f4f5;
+            --zinc-400: #a1a1aa;
+            --zinc-600: #52525b;
+            --zinc-700: #3f3f46;
+            --zinc-800: #27272a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--garden-50);
+            color: var(--soil-700);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--garden-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .header p {
+            font-size: 0.875rem;
+            color: var(--zinc-400);
+        }
+
+        /* SECTION 1: Focused primary action card */
+        .primary-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 1.25rem;
+        }
+
+        .primary-card h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--garden-800);
+            margin-bottom: 0.5rem;
+        }
+
+        .primary-card p {
+            font-size: 0.875rem;
+            color: var(--zinc-600);
+            margin-bottom: 1rem;
+        }
+
+        /* Standalone image upload section */
+        .photo-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--garden-100);
+        }
+
+        .photo-section h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--garden-800);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .photo-section p {
+            font-size: 0.8125rem;
+            color: var(--zinc-600);
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--garden-200);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--garden-50);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--garden-600);
+            background: white;
+        }
+
+        .upload-zone .emoji {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone span {
+            font-size: 0.875rem;
+            color: var(--zinc-600);
+        }
+
+        .upload-zone .hint {
+            font-size: 0.75rem;
+            color: var(--zinc-400);
+            margin-top: 0.25rem;
+        }
+
+        /* Photo preview */
+        .photo-preview {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .photo-preview .preview-item {
+            background: var(--garden-100);
+            padding: 0.375rem 0.75rem;
+            border-radius: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--garden-800);
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .photo-preview .preview-item .remove {
+            cursor: pointer;
+            color: var(--garden-700);
+            font-weight: 600;
+        }
+
+        /* Voice memo option */
+        .voice-option {
+            background: var(--garden-100);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .voice-option h4 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--garden-800);
+            margin-bottom: 0.5rem;
+        }
+
+        .voice-option p {
+            font-size: 0.8125rem;
+            color: var(--zinc-600);
+        }
+
+        /* OPT-IN PANEL - Making it LOUDER */
+        .opt-in-panel {
+            background: linear-gradient(135deg, var(--garden-100) 0%, #f0f7e8 100%);
+            border: 2px solid var(--garden-600);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .opt-in-panel h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--garden-800);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .opt-in-panel p {
+            font-size: 0.875rem;
+            color: var(--zinc-600);
+            margin-bottom: 1rem;
+        }
+
+        .opt-in-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .opt-in-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .opt-in-option:hover {
+            border-color: var(--garden-200);
+        }
+
+        .opt-in-option input[type="radio"] {
+            accent-color: var(--garden-600);
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .opt-in-option label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .opt-in-option .label-main {
+            font-weight: 500;
+            color: var(--soil-700);
+            display: block;
+        }
+
+        .opt-in-option .label-desc {
+            font-size: 0.75rem;
+            color: var(--zinc-400);
+            margin-top: 0.125rem;
+        }
+
+        /* Primary action button */
+        .primary-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--garden-700);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .primary-btn:hover {
+            background: var(--garden-800);
+        }
+
+        /* Tab navigation */
+        .tabs {
+            display: flex;
+            gap: 0;
+            background: var(--zinc-100);
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .tabs button {
+            flex: 1;
+            padding: 0.625rem 1rem;
+            border: none;
+            background: transparent;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--zinc-600);
+            cursor: pointer;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+
+        .tabs button.active {
+            background: white;
+            color: var(--garden-800);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        /* Demo sections */
+        .demo-section {
+            margin-bottom: 3rem;
+        }
+
+        .demo-section h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--garden-800);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--garden-100);
+        }
+
+        .demo-section h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--zinc-700);
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .demo-section p.comment {
+            font-size: 0.75rem;
+            color: var(--zinc-400);
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ============= DEMO 1: Current Interface (Baseline) ============= -->
+        <div class="demo-section">
+            <h2>Pattern 1: Current Baseline</h2>
+            <p class="comment">Shows the issue — opt-in feels buried, photos mixed with everything</p>
+
+            <div class="header">
+                <h1>Talk to your garden</h1>
+                <p>Record a memo and get a journal entry back in your own voice.</p>
+            </div>
+
+            <!-- Tab navigation -->
+            <div class="tabs">
+                <button class="active">Record</button>
+                <button>Upload</button>
+                <button>Type</button>
+            </div>
+
+            <!-- The card where everything gets mushed together -->
+            <div class="primary-card">
+                <p>🎙️ Press to record audio...</p>
+
+                <!-- Photos buried at the bottom -->
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--zinc-100);">
+                    <label style="font-size: 0.875rem; font-weight: 500; color: var(--garden-800);">
+                        Photos from the garden <span style="font-weight: normal; color: var(--zinc-400);">(optional)</span>
+                    </label>
+                    <p style="font-size: 0.8125rem; color: var(--zinc-600); margin-top: 0.25rem;">
+                        Snap what you're talking about — up to 4 photos will appear with your journal entry.
+                    </p>
+                    <input type="file" multiple accept="image/*"
+                        style="margin-top: 0.5rem; font-size: 0.875rem;">
+                </div>
+
+                <p style="margin-top: 1.5rem; text-align: center; color: var(--zinc-500); font-size: 0.875rem;">
+                    Posting as <strong>studio@jamesgillispie.com</strong> — it'll land on your garden desk.
+                </p>
+
+                <button class="primary-btn" style="margin-top: 1rem;">
+                    ✉️ Send to my garden desk
+                </button>
+            </div>
+
+            <!-- Opt-in buried here too -->
+            <div style="background: var(--garden-50); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox">
+                    <span style="font-size: 0.875rem; color: var(--soil-700);">Use AI with my garden memos</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- ============= DEMO 2: Separated Layers ============= -->
+        <div class="demo-section">
+            <h2>Pattern 2: Layered Separation</h2>
+            <p class="comment">Photos get their own dedicated space. AI choice is a distinct panel before submission.</p>
+
+            <div class="header">
+                <h1>Record a garden memo</h1>
+                <p>Your voice, preserved in your own voice.</p>
+            </div>
+
+            <div class="tabs">
+                <button class="active">Record</button>
+                <button>Upload</button>
+                <button>Type</button>
+            </div>
+
+            <!-- Primary recording card - stays clean -->
+            <div class="primary-card">
+                <h2>🎙️ Start recording</h2>
+                <p>Tap to begin. Talk naturally — as if you were telling a friend about your garden.</p>
+                <button class="primary-btn" style="margin-top: 1rem;">
+                    <span style="font-size: 1.5rem;">🎤</span>
+                    <span>Hold to record</span>
+                </button>
+            </div>
+
+            <!-- Photos get their own card, separate but connected -->
+            <div class="photo-section">
+                <h3>📷 Add photos</h3>
+                <p>Include photos to give context to your memo. They'll appear with your journal entry.</p>
+                <div class="upload-zone">
+                    <span class="emoji">📸</span>
+                    <span>Tap to add photos</span>
+                    <div class="hint">Up to 4 photos per memo</div>
+                </div>
+                <div class="photo-preview">
+                    <div class="preview-item">
+                        📷 tomatoes.jpg
+                        <span class="remove">×</span>
+                    </div>
+                    <div class="preview-item">
+                        📷 basil.png
+                        <span class="remove">×</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI choice is now a prominent, separate decision -->
+            <div class="opt-in-panel">
+                <h2>⚡ Choose how we process your memo</h2>
+                <p>Your memo will be saved regardless of what you choose.</p>
+
+                <div class="opt-in-options">
+                    <div class="opt-in-option">
+                        <input type="radio" name="processing" id="full-ai" checked>
+                        <label for="full-ai">
+                            <span class="label-main">✨ Full journal entry</span>
+                            <span class="label-desc">Transcribe + rewrite in your voice (AI on)</span>
+                        </label>
+                    </div>
+
+                    <div class="opt-in-option">
+                        <input type="radio" name="processing" id="transcript-only">
+                        <label for="transcript-only">
+                            <span class="label-main">📝 Just the transcript</span>
+                            <span class="label-desc">Plain transcription, no rewriting</span>
+                        </label>
+                    </div>
+
+                    <div class="opt-in-option">
+                        <input type="radio" name="processing" id="notes-only">
+                        <label for="notes-only">
+                            <span class="label-main">📌 Save as notes</span>
+                            <span class="label-desc">No AI processing — raw input only</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="primary-btn">
+                    ✉️ Send to garden desk
+                </button>
+            </div>
+        </div>
+
+        <!-- ============= DEMO 3: Progressive Disclosure ============= -->
+        <div class="demo-section">
+            <h2>Pattern 3: Progressive Disclosure</h2>
+            <p class="comment">AI settings are a one-time setup. Clean default experience, advanced options available.</p>
+
+            <div class="header">
+                <h1>New garden memo</h1>
+                <p>Start from scratch, end with something beautiful.</p>
+            </div>
+
+            <!-- Simplified primary action -->
+            <div class="primary-card">
+                <h2>🎙️ Record your memo</h2>
+                <p>Hold the microphone button and talk about your garden.</p>
+                <button class="primary-btn" style="margin-top: 1rem;">
+                    <span style="font-size: 2rem;">🎤</span>
+                    <span>Hold to record</span>
+                </button>
+            </div>
+
+            <!-- Photo attachment - separate, clean -->
+            <div class="photo-section">
+                <h3>📷 Optional: Add photos</h3>
+                <p>Photos help give context to your garden notes.</p>
+                <input type="file" multiple accept="image/*"
+                    style="font-size: 0.875rem; margin-top: 0.5rem;">
+            </div>
+
+            <!-- One-time setup notice (disappears after setup) -->
+            <div style="background: linear-gradient(135deg, var(--garden-100) 0%, #f0f7e8 100%); border-radius: 1rem; padding: 1.25rem; margin-bottom: 1rem;">
+                <h3 style="font-size: 1rem; color: var(--garden-800); margin-bottom: 0.5rem;">⚙️ Your AI settings</h3>
+                <p style="font-size: 0.875rem; color: var(--zinc-600); margin-bottom: 1rem;">
+                    You have <strong>full AI processing</strong> enabled. Each memo will be:
+                </p>
+                <ul style="font-size: 0.8125rem; color: var(--zinc-600); padding-left: 1.25rem; margin-bottom: 1rem;">
+                    <li>🎙️ Transcribed to text</li>
+                    <li>✍️ Rewritten as a journal entry</li>
+                    <li>🎨 Matched to your writing style</li>
+                </ul>
+                <a href="#" style="color: var(--garden-700); font-size: 0.8125rem; text-decoration: underline;">
+                    Adjust your AI settings →
+                </a>
+            </div>
+        </div>
+
+        <!-- ============= DEMO 4: Radio Card Selection ============= -->
+        <div class="demo-section">
+            <h2>Pattern 4: Visual Radio Cards</h2>
+            <p class="comment">Each mode is a clear, visual choice with emoji and outcomes visible upfront.</p>
+
+            <div class="header">
+                <h1>What would you like to do?</h1>
+                <p>Choose how you want to share with your garden journal.</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Full AI Mode Card -->
+                <label class="opt-in-option" style="cursor: pointer;">
+                    <input type="radio" name="mode" checked>
+                    <div style="flex: 1; padding: 0.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                            <span style="font-size: 1.5rem;">✨</span>
+                            <span style="font-weight: 500; color: var(--garden-800);">Full journal entry</span>
+                        </div>
+                        <p style="font-size: 0.8125rem; color: var(--zinc-600);">
+                            Record → transcribe → rewrite in your voice
+                        </p>
+                    </div>
+                </label>
+
+                <!-- Transcript Only Card -->
+                <label class="opt-in-option" style="cursor: pointer;">
+                    <input type="radio" name="mode">
+                    <div style="flex: 1; padding: 0.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                            <span style="font-size: 1.5rem;">📝</span>
+                            <span style="font-weight: 500; color: var(--garden-800);">Just the transcript</span>
+                        </div>
+                        <p style="font-size: 0.8125rem; color: var(--zinc-600);">
+                            Record → transcribe → save as notes (no rewriting)
+                        </p>
+                    </div>
+                </label>
+
+                <!-- Text Only Card -->
+                <label class="opt-in-option" style="cursor: pointer;">
+                    <input type="radio" name="mode">
+                    <div style="flex: 1; padding: 0.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                            <span style="font-size: 1.5rem;">✏️</span>
+                            <span style="font-weight: 500; color: var(--garden-800);">Type notes</span>
+                        </div>
+                        <p style="font-size: 0.8125rem; color: var(--zinc-600);">
+                            Type or paste directly — no AI processing
+                        </p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- After selection, show a clean form -->
+            <div class="primary-card" style="margin-top: 1.5rem;">
+                <h2>🎙️ Record your memo</h2>
+                <p>Hold to record — up to 3 minutes.</p>
+                <button class="primary-btn" style="margin-top: 1rem;">
+                    <span style="font-size: 2rem;">🎤</span>
+                    <span>Hold to record</span>
+                </button>
+
+                <div class="photo-section" style="margin-top: 1.5rem; border: 1px dashed var(--garden-200); padding: 1rem;">
+                    <h3 style="margin-bottom: 0.5rem;">📷 Add photos (optional)</h3>
+                    <input type="file" multiple accept="image/*" style="font-size: 0.8125rem;">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -18,6 +18,17 @@
         </flux:button>
     </x-page-header>
 
+    @if (! auth()->user()->canUseAi())
+        <flux:callout icon="shield-check">
+            <flux:callout.heading>AI processing is off</flux:callout.heading>
+            <flux:callout.text>
+                Your saved work stays here, but new recordings will not be transcribed or rewritten.
+                You can still type and save notes without AI.
+                <flux:callout.link href="{{ route('account') }}">Review AI & privacy settings</flux:callout.link>
+            </flux:callout.text>
+        </flux:callout>
+    @endif
+
     {{-- Tabs --}}
     <flux:tabs wire:model.live="tab" variant="segmented" scrollable class="w-full">
         <flux:tab name="articles">Journal{!! $articles->isNotEmpty() ? ' <span class="hidden font-normal text-zinc-400 sm:inline">('.$articles->count().')</span>' : '' !!}</flux:tab>
@@ -153,7 +164,11 @@
             <flux:text>
                 Paste samples of your own writing — blog posts, newsletters, garden journal
                 entries. The more we have, the more your journal entries sound like you.
-                Memos you send become samples automatically.
+                @if (auth()->user()->canLearnVoice())
+                    Memos you send become samples automatically.
+                @else
+                    Voice learning is currently off, so new samples stay unused until you enable it.
+                @endif
             </flux:text>
 
             @if ($profileText)

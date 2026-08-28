@@ -1,4 +1,6 @@
 @props([
+    'aiAssisted' => false,
+    'aiModel' => null,
     'description' => 'Record a memo in your garden. Get back a journal entry in your own voice.',
     'ogImage' => null,
     'title' => config('app.name'),
@@ -9,6 +11,7 @@
     // $description already defaults to the brand tagline (see @props above).
     $metaDescription = $description ?: config('app.name');
     $metaImage = $ogImage ?: asset('og-image.png');
+    $authenticatedUser = auth()->user();
 @endphp
 
 <!DOCTYPE html>
@@ -16,6 +19,23 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    @if ($authenticatedUser)
+        {{-- Browser consent is a friendly front door; these server values keep
+             it aligned with the account record that queued jobs actually trust. --}}
+        <meta name="ai-consent-sync-url" content="{{ route('ai-consent.sync') }}">
+        <meta name="ai-consent-user-id" content="{{ $authenticatedUser->id }}">
+        <meta name="ai-consent-enabled" content="{{ $authenticatedUser->usesAnyAi() ? '1' : '0' }}">
+        <meta name="ai-consent-needs-decision" content="{{ $authenticatedUser->needsAiConsentDecision() ? '1' : '0' }}">
+        <meta name="ai-check-in-due" content="{{ $authenticatedUser->aiCheckInDue() && $authenticatedUser->aiCheckInChannel() === \App\Models\User::AI_CHECK_IN_BROWSER ? '1' : '0' }}">
+    @endif
+
+    @if ($aiAssisted)
+        <meta name="generator:ai-assisted" content="true">
+        <meta name="generator:ai-model" content="{{ $aiModel ?: 'unspecified' }}">
+        <meta name="ai-content-declaration" content="AI-assisted">
+    @endif
 
     {{-- Google Consent Mode v2 — boot with everything DENIED, before any tag
          loads. The cookie banner (resources/js/cookie-consent.js) flips

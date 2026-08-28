@@ -46,7 +46,11 @@ class ArticleController extends Controller
         $filename = Str::slug($article->title) ?: 'article';
 
         if ($format === 'md') {
-            return response('# '.$article->title."\n\n".$article->body_md, 200, [
+            $declaration = $article->is_ai_assisted
+                ? "<!-- AI-assisted content; model: {$article->ai_model} -->\n\n> AI-assisted article — written with help from artificial intelligence.\n\n"
+                : '';
+
+            return response($declaration.'# '.$article->title."\n\n".$article->body_md, 200, [
                 'Content-Type' => 'text/markdown; charset=UTF-8',
                 'Content-Disposition' => "attachment; filename=\"{$filename}.md\"",
             ]);

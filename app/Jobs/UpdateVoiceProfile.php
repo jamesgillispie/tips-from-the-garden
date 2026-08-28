@@ -27,14 +27,29 @@ class UpdateVoiceProfile implements ShouldQueue
     public function handle(WriterContract $writer): void
     {
         $user = $this->submission->user;
+
+        // Delivery has already succeeded, but an opt-out must still stop this
+        // later model-backed stage before a sample is banked or summarized.
+        if (! $user->canLearnVoice()) {
+            return;
+        }
+
         $transcript = $this->submission->transcript;
 
         if ($transcript === null) {
             return;
         }
 
+        $sampleSource = $this->submission->source === Submission::SOURCE_PASTE
+            ? WritingSample::SOURCE_PASTE
+            : WritingSample::SOURCE_TRANSCRIPT;
+
+        if (! in_array($sampleSource, $user->aiIncludedSampleSources(), true)) {
+            return;
+        }
+
         $user->writingSamples()->create([
-            'source' => WritingSample::SOURCE_TRANSCRIPT,
+            'source' => $sampleSource,
             'title' => 'Voice memo — '.$this->submission->created_at?->format('M j, Y'),
             'body' => $transcript->raw_text,
             'include_in_profile' => true,
@@ -43,7 +58,7 @@ class UpdateVoiceProfile implements ShouldQueue
         $profile = $user->voiceProfile()->firstOrCreate([]);
         $profile->increment('sample_count');
 
-        $every = max(1, (int) config('pipeline.voice_profile.regenerate_every'));
+        $every = $user->aiVoiceLearningThreshold();
 
         if ($profile->sample_count % $every !== 0 && $profile->profile_text !== null) {
             return;
@@ -51,6 +66,7 @@ class UpdateVoiceProfile implements ShouldQueue
 
         $samples = $user->writingSamples()
             ->active()
+            ->whereIn('source', $user->aiIncludedSampleSources())
             ->latest()
             ->limit((int) config('pipeline.voice_profile.max_samples_in_prompt'))
             ->pluck('body')
@@ -61,6 +77,7 @@ class UpdateVoiceProfile implements ShouldQueue
         }
 
         try {
+            $this->submission->update(['ai_used' => true]);
             $profile->update(['profile_text' => $writer->summarizeStyle($samples)]);
         } catch (\Throwable $e) {
             // A failed profile refresh should never look like a failed

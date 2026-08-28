@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AiCheckInController;
+use App\Http\Controllers\AiConsentController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\ConfirmEmailChangeController;
@@ -62,6 +64,23 @@ Route::get('/memos/{submission:uuid}/transcript', [TranscriptController::class, 
 Route::get('/account', AccountSettings::class)
     ->middleware('auth')
     ->name('account');
+
+// The privacy banner syncs its broad AI choice to the signed-in account. The
+// database remains authoritative for queued jobs and granular settings.
+Route::post('/privacy/consent', AiConsentController::class)
+    ->middleware(['auth', 'throttle:20,1'])
+    ->name('ai-consent.sync');
+
+// Email check-ins open a confirmation page first; state changes happen only
+// after a CSRF-protected POST so link scanners cannot opt a gardener in or out.
+Route::get('/ai/check-in/{user}/{action}', [AiCheckInController::class, 'show'])
+    ->whereIn('action', ['confirm', 'disable'])
+    ->middleware(['signed', 'throttle:12,1'])
+    ->name('ai-check-in.show');
+Route::post('/ai/check-in/{user}/{action}', [AiCheckInController::class, 'update'])
+    ->whereIn('action', ['confirm', 'disable'])
+    ->middleware(['signed', 'throttle:12,1'])
+    ->name('ai-check-in.update');
 
 // Confirm an email change from the new address. The signed link is the proof,
 // so no login is required — it works on whatever device opened the email.

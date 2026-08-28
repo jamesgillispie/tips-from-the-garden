@@ -268,6 +268,24 @@ class AccountSettingsTest extends TestCase
         $disk->assertMissing(['photos/one.jpg', 'photos/one_thumb.jpg']);
     }
 
+    public function test_wiping_data_deletes_the_stored_audio_too(): void
+    {
+        Storage::fake(config('pipeline.audio.disk'));
+
+        $user = $this->gardener();
+        $memo = $this->memoFor($user, 'The dahlias are blooming early.');
+        $memo->update(['audio_path' => 'audio/memo.m4a']);
+        Storage::disk(config('pipeline.audio.disk'))->put('audio/memo.m4a', 'audio-bytes');
+
+        Livewire::actingAs($user)
+            ->test(AccountSettings::class)
+            ->set('wipeConfirmation', 'wipe')
+            ->call('wipeData')
+            ->assertHasNoErrors();
+
+        Storage::disk(config('pipeline.audio.disk'))->assertMissing('audio/memo.m4a');
+    }
+
     public function test_wiping_needs_the_word_wipe(): void
     {
         $user = $this->gardener();

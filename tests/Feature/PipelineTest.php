@@ -6,6 +6,7 @@ use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\AiConsentService;
 use Database\Seeders\ArticleTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,6 +20,7 @@ class PipelineTest extends TestCase
         $this->seed(ArticleTemplateSeeder::class);
 
         $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         $submission = Submission::create([
             'user_id' => $user->id,
@@ -44,6 +46,7 @@ class PipelineTest extends TestCase
         $this->seed(ArticleTemplateSeeder::class);
 
         $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         $submission = Submission::create([
             'user_id' => $user->id,

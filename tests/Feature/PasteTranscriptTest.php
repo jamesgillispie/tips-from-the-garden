@@ -8,6 +8,7 @@ use App\Jobs\WriteArticle;
 use App\Livewire\UploadForm;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\AiConsentService;
 use App\Services\SubmissionService;
 use Database\Seeders\ArticleTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +29,9 @@ class PasteTranscriptTest extends TestCase
         $this->seed(ArticleTemplateSeeder::class);
         Mail::fake();
 
+        $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
+
         $submission = app(SubmissionService::class)
             ->fromTranscript(self::SAMPLE, 'gardener@example.test');
 
@@ -46,6 +50,9 @@ class PasteTranscriptTest extends TestCase
     {
         Bus::fake();
 
+        $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
+
         app(SubmissionService::class)->fromTranscript(self::SAMPLE, 'gardener@example.test');
 
         Bus::assertChained([
@@ -61,6 +68,7 @@ class PasteTranscriptTest extends TestCase
         Mail::fake();
 
         $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)

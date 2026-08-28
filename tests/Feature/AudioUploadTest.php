@@ -8,6 +8,7 @@ use App\Jobs\WriteArticle;
 use App\Livewire\UploadForm;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\AiConsentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
@@ -27,6 +28,7 @@ class AudioUploadTest extends TestCase
         Storage::fake(config('pipeline.audio.disk'));
 
         $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -56,6 +58,7 @@ class AudioUploadTest extends TestCase
         Storage::fake(config('pipeline.audio.disk'));
 
         $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -76,6 +79,7 @@ class AudioUploadTest extends TestCase
     public function test_submitting_record_mode_without_a_recording_is_rejected(): void
     {
         $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)

@@ -8,6 +8,7 @@ use App\Mail\EmailChangeNotice;
 use App\Models\Photo;
 use App\Models\Transcript;
 use App\Models\User;
+use App\Services\AiConsentService;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,21 @@ class AccountSettings extends Component
 
     public string $password_confirmation = '';
 
+    // AI & privacy.
+    public bool $aiOptIn = false;
+
+    public bool $aiTranscription = false;
+
+    public bool $aiArticleWriting = false;
+
+    public bool $aiVoiceLearning = false;
+
+    public int $voiceLearningThreshold = 3;
+
+    public bool $includeTranscriptSamples = true;
+
+    public bool $includePastedSamples = true;
+
     // Danger zone.
     public string $wipeConfirmation = '';
 
@@ -62,6 +78,25 @@ class AccountSettings extends Component
         $this->name = $user->name ?? '';
         $this->region = $user->region ?? '';
         $this->birthYear = $user->birth_year ? (string) $user->birth_year : null;
+
+        $preferences = $user->aiPreferences();
+        $this->aiOptIn = (bool) $user->ai_opt_in;
+        $this->aiTranscription = $preferences['transcription'];
+        $this->aiArticleWriting = $preferences['article_writing'];
+        $this->aiVoiceLearning = $preferences['voice_learning'];
+        $this->voiceLearningThreshold = $preferences['voice_learning_threshold'];
+        $this->includeTranscriptSamples = in_array('transcript', $preferences['included_samples'], true);
+        $this->includePastedSamples = in_array('paste', $preferences['included_samples'], true);
+    }
+
+    /** A first opt-in starts with the complete experience selected. */
+    public function updatedAiOptIn(bool $enabled): void
+    {
+        if ($enabled && ! $this->aiTranscription && ! $this->aiArticleWriting && ! $this->aiVoiceLearning) {
+            $this->aiTranscription = true;
+            $this->aiArticleWriting = true;
+            $this->aiVoiceLearning = true;
+        }
     }
 
     /** USDA hardiness zones 1a–13b — the values the region select offers. */
@@ -166,6 +201,60 @@ class AccountSettings extends Component
         Flux::toast(text: 'Your password is updated.', variant: 'success');
     }
 
+    public function updateAiSettings(AiConsentService $consent): void
+    {
+        $validated = $this->validate([
+            'aiOptIn' => ['boolean'],
+            'aiTranscription' => ['boolean'],
+            'aiArticleWriting' => ['boolean'],
+            'aiVoiceLearning' => ['boolean'],
+            'voiceLearningThreshold' => ['integer', 'min:1', 'max:20'],
+            'includeTranscriptSamples' => ['boolean'],
+            'includePastedSamples' => ['boolean'],
+        ]);
+
+        if ($validated['aiOptIn']
+            && ! $validated['aiTranscription']
+            && ! $validated['aiArticleWriting']
+            && ! $validated['aiVoiceLearning']) {
+            $this->addError('aiOptIn', 'Choose at least one AI feature, or turn the main switch off.');
+
+            return;
+        }
+
+        $includedSamples = [];
+
+        if ($validated['includeTranscriptSamples']) {
+            $includedSamples[] = 'transcript';
+        }
+
+        if ($validated['includePastedSamples']) {
+            $includedSamples[] = 'paste';
+        }
+
+        $user = $consent->updatePreferences(auth()->user(), $validated['aiOptIn'], [
+            'transcription' => $validated['aiTranscription'],
+            'article_writing' => $validated['aiArticleWriting'],
+            'voice_learning' => $validated['aiVoiceLearning'],
+            'voice_learning_threshold' => $validated['voiceLearningThreshold'],
+            'included_samples' => $includedSamples,
+        ]);
+
+        // Keep the broad browser category aligned without letting its callback
+        // flatten these granular settings back to "all on".
+        $this->dispatch('ai-consent-updated',
+            aiEnabled: $user->usesAnyAi(),
+            userId: $user->id,
+        );
+
+        Flux::toast(
+            text: $user->usesAnyAi()
+                ? 'Your AI and privacy settings are saved.'
+                : 'AI processing is now off for your account.',
+            variant: 'success',
+        );
+    }
+
     /**
      * Clear out everything the gardener has made — recordings, journal entries,
      * writing samples — but keep the account itself and reset the learned voice.
@@ -240,7 +329,9 @@ class AccountSettings extends Component
 
         Transcript::whereIn('submission_id', $submissionIds)->delete();
         $user->articles()->withTrashed()->forceDelete();
-        $user->submissions()->withTrashed()->forceDelete();
+        // Force-delete through model instances so Submission's deleting event
+        // removes the stored audio; a bulk query would skip model events.
+        $user->submissions()->withTrashed()->get()->each->forceDelete();
         $user->writingSamples()->delete();
     }
 
