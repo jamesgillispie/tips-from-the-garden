@@ -12,6 +12,10 @@ class Article extends Model
 {
     use HasRevisions;
 
+    protected $attributes = [
+        'is_ai_assisted' => false,
+    ];
+
     protected $fillable = [
         'title',
         'body_md',
@@ -19,6 +23,8 @@ class Article extends Model
         'submission_id',
         'article_template_id',
         'writer',
+        'is_ai_assisted',
+        'ai_model',
         'download_token',
         'delivered_at',
         'published',
@@ -28,6 +34,7 @@ class Article extends Model
     {
         return [
             'delivered_at' => 'datetime',
+            'is_ai_assisted' => 'boolean',
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Jobs\TranscribeAudio;
 use App\Jobs\WriteArticle;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\AiConsentService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class RunPipeline extends Command
 
     protected $description = 'Run the full voice-to-article pipeline synchronously on a local audio file';
 
-    public function handle(): int
+    public function handle(AiConsentService $consent): int
     {
         $audioArg = $this->argument('audio');
 
@@ -31,6 +32,14 @@ class RunPipeline extends Command
         }
 
         $user = User::fromEmail($this->option('email'));
+
+        // This developer-only command is itself an explicit instruction to run
+        // the full model pipeline. Keep its historical one-command workflow by
+        // recording that choice on the local test account.
+        if (! $user->canTranscribe() || ! $user->canWriteArticles()) {
+            $consent->applyBroadChoice($user, enabled: true, analyticsEnabled: false);
+            $this->warn('Enabled AI processing for this local pipeline account.');
+        }
 
         $extension = strtolower(pathinfo($audioArg, PATHINFO_EXTENSION)) ?: 'm4a';
         $path = config('pipeline.audio.path').'/'.Str::uuid().'.'.$extension;

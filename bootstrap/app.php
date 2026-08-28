@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // correctly.
         $middleware->trustProxies(at: '*');
 
+        // vanilla-cookieconsent writes this cookie in JavaScript, so Laravel
+        // must not try to decrypt it before registration / Google sign-in read it.
+        $middleware->encryptCookies(except: ['cc_cookie']);
+
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
         ]);

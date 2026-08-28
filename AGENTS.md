@@ -19,6 +19,9 @@ whisper.cpp (transcription) · Ollama → Codex API (writing).
   is `/webhooks/postmark` (not `/webhooks/email-inbound`), `SubmissionService`
   does the intake instead of a `StoreSubmission` job, `Article.body_md` is
   Markdown (not Twill blocks), and the queue runs on the `database` driver.
+- `docs/ai-opt-in.md`, `docs/adr/0004-ai-user-consent.md`, and
+  `docs/adr/0005-eu-ai-act-compliance.md` — implemented AI consent, federated
+  monthly check-ins, pipeline branching, audit fields, and output labeling.
 - `design-system/` — scaffolding only right now (empty `project/theme-preview/`);
   no tokens or theme files committed yet.
 
@@ -32,6 +35,8 @@ vendor/bin/pint                               # format (Laravel preset, no pint.
 npm run build                                 # build front-end assets (Vite + Tailwind v4)
 npm run dev                                   # Vite dev server
 php artisan queue:work --timeout=3600         # REQUIRED to process the pipeline (jobs run on the queue)
+php artisan ai:send-check-ins                 # queue due email-channel AI consent reminders
+php artisan schedule:list                     # confirm the monthly check-in schedule
 ```
 
 End-to-end manual run against a real audio file, synchronously, bypassing the queue:
@@ -42,7 +47,9 @@ php artisan pipeline:run path/to/memo.m4a --email=you@example.com [--deliver]
 
 With `TRANSCRIBER_DRIVER=fake` / `WRITER_DRIVER=fake` in `.env`, `pipeline:run`
 works on any file path without whisper.cpp or Ollama installed (it never reads
-audio content with fake drivers — only the file must exist).
+audio content with fake drivers — only the file must exist). The command itself
+is an explicit developer request for the full pipeline, so it records AI
+permission on its local test account if needed and prints a warning.
 
 ## Test environment notes
 
@@ -68,23 +75,30 @@ on `config('pipeline.*')`. **To add a driver:** implement the contract, add a
 `config/pipeline.php` + env keys. Drivers are resolved by the container and
 injected into jobs — never `new` them directly.
 
-### The job chain
+### AI consent and the job chain
+Every model-backed stage is off by default. The database user settings are the
+source of truth (`ai_opt_in` + `ai_preferences`); browser cookie state never
+authorizes a queued job. Policy helpers live on `User`: `canTranscribe()`,
+`canWriteArticles()`, and `canLearnVoice()`. `WriteArticle` and
+`UpdateVoiceProfile` re-check permission when they start.
+
 `SubmissionService` builds a `Bus::chain` through the private `dispatchChain()`
-helper (which attaches the `.catch → markFailed`). Audio submissions use the
-full chain via `dispatchPipeline()`:
+helper (which attaches the `.catch → markFailed`) and omits disabled stages:
 
 ```
-TranscribeAudio → WriteArticle → DeliverArticle   (.catch → markFailed)
-                                       └─ dispatches → UpdateVoiceProfile
+recording + writing:        TranscribeAudio → WriteArticle → DeliverArticle
+recording, transcript only: TranscribeAudio → DeliverArticle
+pasted notes + writing:     WriteArticle → DeliverArticle
+pasted notes, no writing:   DeliverArticle
+                                                    └─ may dispatch UpdateVoiceProfile
 ```
 
-Pasted-transcript submissions skip transcription and chain
-`WriteArticle → DeliverArticle` directly. Each job advances the `Submission`
-status state machine (`received → transcribing → transcribed → writing → ready`,
-or `failed`) via `markAs()` / `markFailed()`. A failure anywhere in the chain
-marks the whole submission failed. `UpdateVoiceProfile` runs *after* delivery
-and must never fail the submission (the article already shipped) — it logs and
-moves on.
+A complete opt-out disables whisper transcription too (local inference is
+still AI). Recordings are rejected before storage; pasted notes can still be
+saved and delivered unchanged. Each job advances the `Submission` status state
+machine (`received → transcribing → transcribed → writing → ready`, or
+`failed`). `UpdateVoiceProfile` runs after delivery and must never fail the
+submission — it logs and moves on.
 
 ### Four intake doors, one funnel
 Every door creates a `Submission` through `SubmissionService`, then dispatches a
@@ -110,7 +124,9 @@ chain:
   it returns 403 **only** on a bad `?token=` (checked against
   `services.postmark.inbound_token`). Mail without an audio attachment gets a
   `NoAudioFound` reply with attach instructions, unless the sender looks
-  automated (no-reply/mailer-daemon/etc — loop protection).
+  automated (no-reply/mailer-daemon/etc — loop protection). If the known
+  sender has transcription disabled, the attachment is left untouched and an
+  `AiTranscriptionDisabled` reply explains how to review settings.
 
 ### The pipeline never goes silent
 `Submission::markFailed()` queues a `SubmissionFailed` email to the gardener on
@@ -119,23 +135,26 @@ the **first** transition to failed only — the chain `.catch` and each job's
 retry-idempotent: `TranscribeAudio` upserts its transcript, `WriteArticle`
 skips writing when an article already exists, and `DeliverArticle` uses
 `delivered_at` as the don't-email-twice flag. The `ArticleReady` email contains
-the full article body, not just a link.
+the full article body, not just a link. When writing is off, `DeliverArticle`
+sends `TranscriptReady` instead and uses `submissions.delivered_at` for the
+same retry protection.
 
 ### Identity & auth
-Email is the only identity. `User::fromEmail()` find-or-creates the user and
-their `VoiceProfile`. Login is passwordless magic-link (`MagicLinkController`,
-signed URLs). Delivered articles are viewable/downloadable **without login** via
-a random 40-char `download_token` (`/a/{token}`, `+/download/{md|pdf}`; PDF via
-dompdf).
+Email is the account identity. `User::fromEmail()` find-or-creates the user and
+their `VoiceProfile`. Laravel Fortify provides password registration/login and
+reset links; Socialite adds Google sign-in. Delivered articles are
+viewable/downloadable **without login** via a random 40-char `download_token`
+(`/a/{token}`, `/a/{token}/download/{md|pdf}`; PDF via dompdf).
 
 ### Voice-matching loop
-Each delivered transcript is banked as a `WritingSample`. Every N samples
-(`pipeline.voice_profile.regenerate_every`) the writer's `summarizeStyle()`
-regenerates the user's `VoiceProfile.profile_text`, which is then injected into
-future article prompts. Prompt construction lives in the
-`BuildsArticlePrompts` trait (system prompt = ghostwriter rules + template
-structure + voice profile + a strict output format). Writers parse the model
-output as `# title\n\n<markdown body>`.
+When voice learning is enabled, selected delivered transcripts/pasted notes are
+banked as `WritingSample`s. The per-user `voice_learning_threshold` controls
+when the writer's `summarizeStyle()` regenerates `VoiceProfile.profile_text`;
+`included_samples` controls which source types participate. The profile is not
+injected into article prompts while voice learning is disabled. Prompt
+construction lives in the `BuildsArticlePrompts` trait (system prompt =
+ghostwriter rules + template structure + voice profile + a strict output
+format). Writers parse output as `# title\n\n<markdown body>`.
 
 ### Templates
 `ArticleTemplate` (Twill module) supplies the article's structure via

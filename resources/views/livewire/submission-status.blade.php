@@ -27,8 +27,29 @@
                 <flux:button href="{{ route('home') }}" variant="primary" icon="arrow-path">Try again</flux:button>
             </div>
         </flux:card>
+    @elseif ($submission->isReady() && $submission->transcript && ! $submission->hadArticle())
+        <flux:card class="text-center">
+            <flux:icon.document-text class="mx-auto size-12 text-garden-700" />
+            <h1 class="mt-4 font-serif text-3xl font-semibold text-garden-800">
+                Your garden notes are ready
+            </h1>
+            <flux:text class="mt-3">
+                We saved your words without asking the AI writer to rewrite them.
+                The full transcript has also been sent to your email.
+            </flux:text>
+            @auth
+                @if (auth()->id() === $submission->user_id)
+                    <div class="mt-6">
+                        <flux:button href="{{ route('memos.transcript', ['submission' => $submission->uuid]) }}"
+                            variant="primary" icon="arrow-down-tray">
+                            Download transcript
+                        </flux:button>
+                    </div>
+                @endif
+            @endauth
+        </flux:card>
     @elseif ($submission->isReady())
-        {{-- Ready, but the journal entry has since been deleted from the garden desk. --}}
+        {{-- Ready, but the journal entry and transcript have since been deleted. --}}
         <flux:card class="text-center">
             <div class="text-6xl">🍂</div>
             <h1 class="mt-4 font-serif text-2xl font-semibold text-garden-800">This journal entry was deleted</h1>

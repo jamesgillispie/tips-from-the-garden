@@ -29,6 +29,10 @@ class TranscribeAudio implements ShouldQueue
         $audioPath = Storage::disk(config('pipeline.audio.disk'))
             ->path($this->submission->audio_path);
 
+        // whisper.cpp is AI too, even though it runs locally. Record the model
+        // use before invoking it so failed attempts remain visible in the audit.
+        $this->submission->update(['ai_used' => true]);
+
         $result = $transcriber->transcribe($audioPath);
 
         // Correct known plant/cultivar mishearings (e.g. "rucola" -> "arugula")

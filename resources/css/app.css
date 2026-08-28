@@ -78,9 +78,9 @@
     }
 }
 
-/* ─────────────────────────  COOKIE CONSENT  ─────────────────────────
-   Repaint orestbida/cookieconsent in the garden palette so the banner and
-   preferences modal read as part of the brand, not a bolted-on widget. We
+/* ─────────────────────────  PRIVACY CHOICES  ─────────────────────────
+   Repaint orestbida/cookieconsent in the garden palette so the cookie + AI
+   preferences modal reads as part of the brand, not a bolted-on widget. We
    only remap the library's CSS variables — referencing the same design-system
    tokens (--color-garden-*, --font-sans) the rest of the app uses, so the
    banner moves in lockstep if those ever change. */

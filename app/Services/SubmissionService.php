@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use LogicException;
 
 class SubmissionService
 {
@@ -28,6 +29,10 @@ class SubmissionService
     public function fromUpload(UploadedFile $file, string $email, string $source = Submission::SOURCE_UPLOAD, array $photos = []): Submission
     {
         $user = User::fromEmail($email);
+
+        if (! $user->canTranscribe()) {
+            throw new LogicException('AI transcription is disabled for this account.');
+        }
 
         $path = $file->store(
             config('pipeline.audio.path'),
@@ -72,10 +77,15 @@ class SubmissionService
 
         $this->storePhotos($submission, $photos);
 
-        $this->dispatchChain($submission, [
-            new WriteArticle($submission),
-            new DeliverArticle($submission),
-        ]);
+        $jobs = [];
+
+        if ($user->canWriteArticles()) {
+            $jobs[] = new WriteArticle($submission);
+        }
+
+        $jobs[] = new DeliverArticle($submission);
+
+        $this->dispatchChain($submission, $jobs);
 
         return $submission;
     }
@@ -103,6 +113,10 @@ class SubmissionService
      */
     public function fromEmail(User $user, string $filename, string $base64Content, array $photoAttachments = []): Submission
     {
+        if (! $user->canTranscribe()) {
+            throw new LogicException('AI transcription is disabled for this account.');
+        }
+
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION)) ?: 'm4a';
         $path = config('pipeline.audio.path').'/'.Str::uuid().'.'.$extension;
 
@@ -132,11 +146,21 @@ class SubmissionService
 
     public function dispatchPipeline(Submission $submission): void
     {
-        $this->dispatchChain($submission, [
-            new TranscribeAudio($submission),
-            new WriteArticle($submission),
-            new DeliverArticle($submission),
-        ]);
+        $user = $submission->user;
+
+        if (! $user->canTranscribe()) {
+            throw new LogicException('AI transcription is disabled for this account.');
+        }
+
+        $jobs = [new TranscribeAudio($submission)];
+
+        if ($user->canWriteArticles()) {
+            $jobs[] = new WriteArticle($submission);
+        }
+
+        $jobs[] = new DeliverArticle($submission);
+
+        $this->dispatchChain($submission, $jobs);
     }
 
     /**

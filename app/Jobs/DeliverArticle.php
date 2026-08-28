@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Mail\ArticleReady;
+use App\Mail\TranscriptReady;
 use App\Models\Submission;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -25,20 +26,41 @@ class DeliverArticle implements ShouldQueue
 
     public function handle(): void
     {
+        $this->submission->loadMissing(['article', 'transcript', 'user']);
+
         $article = $this->submission->article;
+        $deliveredNow = false;
 
-        if ($article === null) {
-            throw new RuntimeException('No article found for submission.');
+        if ($article !== null) {
+            // delivered_at doubles as the idempotency flag: a retried attempt
+            // that already emailed the article must not email it twice.
+            if ($article->delivered_at === null) {
+                Mail::to($this->submission->user->email)->send(new ArticleReady($article));
+
+                $deliveredAt = now();
+                $article->update(['delivered_at' => $deliveredAt]);
+                $this->submission->update(['delivered_at' => $deliveredAt]);
+                $deliveredNow = true;
+            }
+
+            $this->submission->markAs(Submission::STATUS_READY);
+        } else {
+            if ($this->submission->transcript === null) {
+                throw new RuntimeException('No article or transcript found for submission.');
+            }
+
+            if ($this->submission->delivered_at === null) {
+                Mail::to($this->submission->user->email)->send(new TranscriptReady($this->submission));
+
+                $this->submission->update(['delivered_at' => now()]);
+                $deliveredNow = true;
+            }
+
+            $this->submission->markAs(Submission::STATUS_READY);
         }
 
-        // delivered_at doubles as the idempotency flag: a retried attempt
-        // that already emailed the article must not email it twice.
-        if ($article->delivered_at === null) {
-            Mail::to($this->submission->user->email)->send(new ArticleReady($article));
-
-            $article->update(['delivered_at' => now()]);
+        if ($deliveredNow && $this->submission->user->canLearnVoice()) {
+            UpdateVoiceProfile::dispatch($this->submission);
         }
-
-        UpdateVoiceProfile::dispatch($this->submission);
     }
 }

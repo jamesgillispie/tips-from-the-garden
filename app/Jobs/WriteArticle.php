@@ -33,6 +33,16 @@ class WriteArticle implements ShouldQueue
             return;
         }
 
+        $user = $this->submission->user;
+
+        // The setting is checked again when the queued job actually starts.
+        // A gardener who opts out after dispatch must not trigger a model call.
+        if (! $user->canWriteArticles()) {
+            $this->submission->markAs(Submission::STATUS_TRANSCRIBED);
+
+            return;
+        }
+
         $this->submission->markAs(Submission::STATUS_WRITING);
 
         $transcript = $this->submission->transcript;
@@ -41,13 +51,14 @@ class WriteArticle implements ShouldQueue
             throw new RuntimeException('No transcript found for submission.');
         }
 
-        $user = $this->submission->user;
         $template = ArticleTemplate::pick();
+
+        $this->submission->update(['ai_used' => true]);
 
         $draft = $writer->write(new WriteRequest(
             transcript: $transcript->raw_text,
             template: $template,
-            voiceProfile: $user->voiceProfile?->profile_text,
+            voiceProfile: $user->canLearnVoice() ? $user->voiceProfile?->profile_text : null,
             authorName: $user->name,
         ));
 
@@ -57,6 +68,8 @@ class WriteArticle implements ShouldQueue
             'user_id' => $user->id,
             'article_template_id' => $template?->id,
             'writer' => $writer->identifier(),
+            'is_ai_assisted' => true,
+            'ai_model' => $writer->identifier(),
             'published' => true,
         ]);
 

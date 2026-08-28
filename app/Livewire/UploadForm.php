@@ -104,9 +104,17 @@ class UploadForm extends Component
 
     public function submit(SubmissionService $service)
     {
+        $user = auth()->user();
+
+        if ($this->mode !== 'paste' && ! $user->canTranscribe()) {
+            $this->addError('ai', 'Turn on AI transcription in your privacy settings before sending a recording.');
+
+            return;
+        }
+
         $this->validate();
 
-        $email = auth()->user()->email;
+        $email = $user->email;
         $field = $this->mode === 'paste' ? 'transcript' : 'audio';
         $key = 'submit:'.strtolower($email);
 
@@ -135,7 +143,13 @@ class UploadForm extends Component
         $animateMode = $this->renderedMode !== null && $this->renderedMode !== $this->mode;
         $this->renderedMode = $this->mode;
 
-        return view('livewire.upload-form', ['animateMode' => $animateMode])
-            ->layout('components.layouts.app', ['title' => config('app.name')]);
+        $user = auth()->user();
+
+        return view('livewire.upload-form', [
+            'animateMode' => $animateMode,
+            'canTranscribe' => $user->canTranscribe(),
+            'canWriteArticles' => $user->canWriteArticles(),
+            'canLearnVoice' => $user->canLearnVoice(),
+        ])->layout('components.layouts.app', ['title' => config('app.name')]);
     }
 }

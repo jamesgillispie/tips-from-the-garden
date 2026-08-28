@@ -4,6 +4,10 @@
 Your journal entry is ready — here it is, start to finish. It's also saved online,
 where you can download it as a PDF to print or share.
 
+@if ($article->is_ai_assisted)
+**AI-assisted article:** this entry was shaped by an AI writer from your garden notes.
+@endif
+
 ---
 
 {{ $article->body_md }}

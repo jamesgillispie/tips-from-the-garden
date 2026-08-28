@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\UploadForm;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\AiConsentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
@@ -29,7 +30,7 @@ class PhotoUploadTest extends TestCase
     {
         Bus::fake();
 
-        $user = User::fromEmail('gardener@example.test');
+        $user = $this->aiUser();
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -50,7 +51,7 @@ class PhotoUploadTest extends TestCase
     {
         Bus::fake();
 
-        $user = User::fromEmail('gardener@example.test');
+        $user = $this->aiUser();
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -65,7 +66,7 @@ class PhotoUploadTest extends TestCase
 
     public function test_a_file_that_is_not_a_photo_is_rejected(): void
     {
-        $user = User::fromEmail('gardener@example.test');
+        $user = $this->aiUser();
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -82,7 +83,7 @@ class PhotoUploadTest extends TestCase
     {
         config(['pipeline.photos.max_per_submission' => 2]);
 
-        $user = User::fromEmail('gardener@example.test');
+        $user = $this->aiUser();
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -97,7 +98,7 @@ class PhotoUploadTest extends TestCase
     {
         Bus::fake();
 
-        $user = User::fromEmail('gardener@example.test');
+        $user = $this->aiUser();
 
         Livewire::actingAs($user)
             ->test(UploadForm::class)
@@ -110,6 +111,14 @@ class PhotoUploadTest extends TestCase
 
         $submission = Submission::firstOrFail();
         $this->assertSame(['keep.jpg'], $submission->photos()->pluck('original_filename')->all());
+    }
+
+    private function aiUser(): User
+    {
+        $user = User::fromEmail('gardener@example.test');
+        app(AiConsentService::class)->applyBroadChoice($user, true, false);
+
+        return $user;
     }
 
     private function fakeJpeg(string $name = 'photo.jpg'): UploadedFile

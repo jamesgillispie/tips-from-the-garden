@@ -1,8 +1,34 @@
 <div class="space-y-8">
     <x-page-header title="Talk to your garden"
-        subtitle="Record a memo and get a journal entry back in your own voice.">
+        :subtitle="$canWriteArticles
+            ? 'Record a memo and get a journal entry back in your own voice.'
+            : ($canTranscribe
+                ? 'Record a memo and keep the transcript as your garden notes.'
+                : 'Type your garden notes and keep them without AI processing.')">
         <x-back-to-desk />
     </x-page-header>
+
+    @if (! $canTranscribe || ! $canWriteArticles || ! $canLearnVoice)
+        <flux:callout icon="adjustments-horizontal" variant="warning">
+            <flux:callout.heading>Your AI settings are shaping this visit</flux:callout.heading>
+            <flux:callout.text>
+                @if (! $canTranscribe)
+                    Recordings are paused because transcription is off.
+                @elseif (! $canWriteArticles)
+                    Recordings can be transcribed, but the AI writer is off—so you will receive your notes without a rewritten journal entry.
+                @else
+                    Voice learning is off. This memo will not become a new writing sample.
+                @endif
+                <flux:callout.link href="{{ route('account') }}">Review AI & privacy settings</flux:callout.link>
+            </flux:callout.text>
+        </flux:callout>
+    @endif
+
+    @error('ai')
+        <flux:callout variant="danger" icon="exclamation-triangle">
+            <flux:callout.text>{{ $message }}</flux:callout.text>
+        </flux:callout>
+    @enderror
 
     {{-- Switch how you share — recording is the default and first tab. The tabs
          sit at the top level (just like the garden desk's tabs) so moving between
@@ -18,6 +44,15 @@
     <flux:card class="space-y-6">
         <form wire:submit="submit" class="space-y-7">
             @if ($mode === 'record')
+                @if (! $canTranscribe)
+                    <flux:callout wire:key="mode-record-disabled" icon="microphone" class="mx-auto max-w-md">
+                        <flux:callout.heading>Recording is paused</flux:callout.heading>
+                        <flux:callout.text>
+                            We will not record or upload audio while AI transcription is off.
+                            You can still use the <strong>Type</strong> tab to save your own notes without model processing.
+                        </flux:callout.text>
+                    </flux:callout>
+                @else
                 <div wire:key="mode-record" x-data="voiceRecorder" aria-live="polite" class="text-center" @if ($animateMode) wire:transition="intake-panel" @endif>
 
                     {{-- This browser can't record --}}
@@ -115,6 +150,7 @@
 
                     @error('audio') <p class="mt-4 text-base font-medium text-red-600">{{ $message }}</p> @enderror
                 </div>
+                @endif
             @elseif ($mode === 'audio')
                 <div wire:key="mode-audio" class="mx-auto max-w-md" @if ($animateMode) wire:transition="intake-panel" @endif>
                     <flux:field>
@@ -124,7 +160,8 @@
                         </flux:description>
                         <input type="file" id="audio" wire:model="audio"
                             accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac,.webm"
-                            class="mt-2 block w-full text-base file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-garden-100 file:px-5 file:py-3 file:text-base file:font-semibold file:text-garden-800 hover:file:bg-garden-100/70">
+                            @disabled(! $canTranscribe)
+                            class="mt-2 block w-full text-base disabled:cursor-not-allowed disabled:opacity-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-garden-100 file:px-5 file:py-3 file:text-base file:font-semibold file:text-garden-800 hover:file:bg-garden-100/70">
                         <div wire:loading wire:target="audio" class="mt-2 flex items-center gap-2 text-base font-medium text-garden-700">
                             <flux:icon.loading class="size-4" /> Uploading your file…
                         </div>
@@ -142,6 +179,9 @@
                         <flux:label>Your notes</flux:label>
                         <flux:description>
                             Type or paste what you'd say out loud — rough notes are perfect.
+                            @unless ($canWriteArticles)
+                                We will save and return them as-is while AI writing is off.
+                            @endunless
                         </flux:description>
                         <flux:textarea wire:model="transcript" rows="7"
                             placeholder="The tomatoes finally set fruit after that cold snap, and the basil needs pinching back…" />
@@ -158,7 +198,7 @@
                     <flux:description>
                         Snap what you're talking about — up to
                         {{ config('pipeline.photos.max_per_submission') }} photos will
-                        appear with your journal entry.
+                        appear with your saved notes or journal entry.
                     </flux:description>
                     <input type="file" id="photos" wire:model="photos" multiple
                         accept="image/*"
@@ -198,8 +238,9 @@
             @if ($mode !== 'record')
                 <div class="mx-auto max-w-md">
                     <flux:button type="submit" variant="primary" icon="paper-airplane" class="w-full"
+                        :disabled="$mode === 'audio' && ! $canTranscribe"
                         wire:loading.attr="disabled" wire:target="audio, photos">
-                        Turn it into a journal entry
+                        {{ $canWriteArticles ? 'Turn it into a journal entry' : 'Save my notes' }}
                     </flux:button>
                 </div>
             @endif

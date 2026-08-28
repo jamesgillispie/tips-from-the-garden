@@ -119,6 +119,80 @@
         </form>
     </flux:card>
 
+    {{-- ────────────────────────  AI & PRIVACY  ──────────────────────── --}}
+    <flux:card>
+        <form wire:submit="updateAiSettings" class="space-y-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0">
+                    <flux:heading size="lg">AI & privacy settings</flux:heading>
+                    <flux:subheading>
+                        Choose exactly what happens to your memos. Turning AI off stops every model-backed step.
+                    </flux:subheading>
+                </div>
+                <flux:modal.trigger name="ai-data-flow" class="shrink-0">
+                    <flux:button type="button" variant="ghost" size="sm" icon="information-circle">
+                        How data is used
+                    </flux:button>
+                </flux:modal.trigger>
+            </div>
+
+            <div class="rounded-xl border border-garden-100 bg-garden-50 p-4">
+                <flux:switch wire:model.live="aiOptIn"
+                    label="Use AI with my garden memos"
+                    description="This master switch takes effect immediately and is off by default." />
+                <flux:error name="aiOptIn" />
+            </div>
+
+            <div class="space-y-5 border-t border-zinc-100 pt-5 {{ $aiOptIn ? '' : 'opacity-55' }}">
+                <flux:switch wire:model="aiTranscription"
+                    label="Transcription"
+                    description="whisper.cpp turns recordings into text on our own server. Audio is not sent to the writing model."
+                    @disabled(! $aiOptIn) />
+
+                <flux:switch wire:model="aiArticleWriting"
+                    label="Journal entry writing"
+                    description="Your transcript is sent to the configured AI writer to shape it into a journal entry."
+                    @disabled(! $aiOptIn) />
+
+                <flux:switch wire:model.live="aiVoiceLearning"
+                    label="Voice learning"
+                    description="Selected writing samples are summarized into style notes for future entries."
+                    @disabled(! $aiOptIn) />
+            </div>
+
+            @if ($aiOptIn && $aiVoiceLearning)
+                <div class="space-y-5 rounded-xl border border-garden-100 bg-white p-4">
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <flux:field>
+                            <flux:label>Refresh voice after</flux:label>
+                            <flux:input type="number" wire:model="voiceLearningThreshold" min="1" max="20"
+                                inputmode="numeric" />
+                            <flux:description>New samples (between 1 and 20).</flux:description>
+                            <flux:error name="voiceLearningThreshold" />
+                        </flux:field>
+
+                        <div class="space-y-3">
+                            <flux:label>Samples AI may learn from</flux:label>
+                            <flux:switch wire:model="includeTranscriptSamples" label="Voice memo transcripts" />
+                            <flux:switch wire:model="includePastedSamples" label="Notes I type or paste" />
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <flux:callout icon="shield-check">
+                <flux:callout.text>
+                    You can turn this off at any time. New queued jobs check your choice again before calling the AI writer or learning your voice.
+                </flux:callout.text>
+            </flux:callout>
+
+            <div class="flex">
+                <flux:spacer />
+                <flux:button type="submit" variant="primary">Save AI settings</flux:button>
+            </div>
+        </form>
+    </flux:card>
+
     {{-- ─────────────────────────  DANGER ZONE  ───────────────────────── --}}
     <flux:card class="border-red-200">
         <div class="space-y-5">
@@ -148,6 +222,46 @@
             </div>
         </div>
     </flux:card>
+
+    {{-- Plain-language AI data map, shared from the settings card. --}}
+    <flux:modal name="ai-data-flow" class="w-full sm:min-w-[32rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">What happens to your data</flux:heading>
+                <flux:text class="mt-2">
+                    Each step is separate. Only the steps you turn on are allowed to run.
+                </flux:text>
+            </div>
+
+            <ol class="space-y-4 text-sm text-soil-700">
+                <li class="border-l-2 border-garden-100 pl-4">
+                    <p class="font-semibold text-garden-800">1. Recording to transcript</p>
+                    <p class="mt-1 text-zinc-600">whisper.cpp reads the audio on our server and saves the resulting text. It does not send your recording to Anthropic or Ollama.</p>
+                </li>
+                <li class="border-l-2 border-garden-100 pl-4">
+                    <p class="font-semibold text-garden-800">2. Transcript to journal entry</p>
+                    <p class="mt-1 text-zinc-600">The transcript—not the audio—is sent to the configured writer. Ollama stays on our server; Anthropic is a cloud service when that driver is selected.</p>
+                </li>
+                <li class="border-l-2 border-garden-100 pl-4">
+                    <p class="font-semibold text-garden-800">3. Learning your written voice</p>
+                    <p class="mt-1 text-zinc-600">Selected text samples are summarized into compact style notes. The voice profile contains no audio recording.</p>
+                </li>
+            </ol>
+
+            <flux:callout icon="lock-closed">
+                <flux:callout.text>
+                    Your recordings, transcripts, entries, samples and voice profile are deleted when you wipe your data or delete your account.
+                </flux:callout.text>
+            </flux:callout>
+
+            <div class="flex">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="primary">Done</flux:button>
+                </flux:modal.close>
+            </div>
+        </div>
+    </flux:modal>
 
     {{-- Wipe-data confirmation. --}}
     <flux:modal name="wipe-data" class="w-full sm:min-w-[24rem]">

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Submission extends Model
@@ -33,16 +34,30 @@ class Submission extends Model
 
     public const SOURCE_RECORD = 'record';
 
+    protected $attributes = [
+        'ai_used' => false,
+    ];
+
     protected $fillable = [
         'uuid',
         'user_id',
         'source',
         'audio_path',
+        'ai_used',
         'original_filename',
         'status',
         'error',
+        'delivered_at',
         'published',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'ai_used' => 'boolean',
+            'delivered_at' => 'datetime',
+        ];
+    }
 
     protected static function booted(): void
     {
@@ -50,6 +65,15 @@ class Submission extends Model
             $submission->uuid ??= (string) Str::uuid();
             $submission->status ??= self::STATUS_RECEIVED;
             $submission->published = true;
+        });
+
+        // A soft delete removes a recording from the gardener's account, so
+        // revoke the stored audio at the same moment. forceDelete also fires
+        // this event; deleting an already-missing object is harmless.
+        static::deleting(function (self $submission) {
+            if ($submission->audio_path) {
+                Storage::disk(config('pipeline.audio.disk'))->delete($submission->audio_path);
+            }
         });
 
         // A hard delete (Twill admin destroy) would otherwise drop the photo
@@ -131,9 +155,23 @@ class Submission extends Model
             self::STATUS_TRANSCRIBING => 'Listening to your memo…',
             self::STATUS_TRANSCRIBED => 'Transcribed — warming up the writer',
             self::STATUS_WRITING => 'Writing your journal entry…',
-            self::STATUS_READY => 'Your journal entry is ready!',
+            self::STATUS_READY => $this->hadArticle()
+                ? 'Your journal entry is ready!'
+                : 'Your notes are ready!',
             self::STATUS_FAILED => 'Something went wrong',
             default => $this->status,
         };
+    }
+
+    public function hasArticle(): bool
+    {
+        return $this->relationLoaded('article')
+            ? $this->article !== null
+            : $this->article()->exists();
+    }
+
+    public function hadArticle(): bool
+    {
+        return $this->article()->withTrashed()->exists();
     }
 }

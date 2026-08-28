@@ -4,6 +4,6 @@
     Record a memo in your garden. Get back a journal entry in your own voice.
     <div class="mt-2">
         <button type="button" onclick="CookieConsent.showPreferences()"
-            class="underline underline-offset-2 hover:text-soil-700">Cookie settings</button>
+            class="underline underline-offset-2 hover:text-soil-700">Privacy choices</button>
     </div>
 </footer>

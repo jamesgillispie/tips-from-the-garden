@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
+use App\Services\AiConsentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -29,7 +31,7 @@ class GoogleAuthController extends Controller
      * Google sends them back here. Find or create the matching account, then
      * log them straight in — no Fortify pipeline.
      */
-    public function callback(): RedirectResponse
+    public function callback(Request $request, AiConsentService $consent): RedirectResponse
     {
         $googleUser = Socialite::driver('google')->user();
 
@@ -39,7 +41,10 @@ class GoogleAuthController extends Controller
             ->where('email', $googleUser->getEmail())
             ->first();
 
+        $created = false;
+
         if (! $user) {
+            $created = true;
             $user = new User;
             $user->google_id = $googleUser->getId();
             $user->email = $googleUser->getEmail();
@@ -54,6 +59,14 @@ class GoogleAuthController extends Controller
             // Keep parity with every other intake door: a user always has a
             // VoiceProfile (see User::fromEmail()).
             $user->voiceProfile()->firstOrCreate([]);
+        }
+
+        if ($created) {
+            $choice = $consent->choiceFromCookie($request);
+
+            if ($choice['recorded']) {
+                $consent->applyBroadChoice($user, $choice['ai'], $choice['analytics']);
+            }
         }
 
         Auth::login($user, remember: true);
